@@ -17,7 +17,7 @@
   let nextGolden = Date.now() + 55000 + Math.random() * 40000;
   let lastFrame = performance.now();
   let lastUi = 0;
-  let lastUpgradeSignature = '';
+  let lastUpgradeSignature = null;
   let toastTimer;
   const buildingButtons = [];
   const buildingList = $('buildingList');
