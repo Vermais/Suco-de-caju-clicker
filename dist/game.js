@@ -22,6 +22,8 @@
   let lastUi = 0;
   let lastUpgradeSignature = null;
   let toastTimer;
+  let rankingSort = 'rebirths';
+  let rankingRequest = 0;
   const buildingButtons = [];
   const buildingList = $('buildingList');
   const upgradeList = $('upgradeList');
@@ -101,6 +103,7 @@
       $('accountButton').disabled = mode === 'embedded';
       setAlbumStatus('Conectado ao Álbum Pedro Victor · cada renascimento vale +10 🧃', true);
       syncPendingAlbumReward().catch(error => setAlbumStatus(error.message));
+      if (!$('leaderboardPanel').hidden) loadRanking();
     },
     signedOut() {
       let guest = null;
@@ -111,6 +114,9 @@
       $('accountButton').textContent = 'Entrar com a conta do álbum';
       $('accountButton').disabled = false;
       setAlbumStatus('Entre com a conta do álbum para receber recompensas.');
+      rankingRequest++;
+      $('rankingList').replaceChildren();
+      $('rankingStatus').textContent = 'Entre com a conta do álbum para ver o ranking.';
     },
     status(message) { $('saveStatus').textContent = message; }
   });
@@ -295,15 +301,84 @@
     }
     render(); save();
   });
+  function showRanking(rows) {
+    const list = $('rankingList');
+    list.replaceChildren();
+    if (!rows.length) {
+      const empty = document.createElement('p');
+      empty.className = 'empty';
+      empty.textContent = 'Ainda não há partidas salvas no ranking.';
+      list.append(empty);
+      return;
+    }
+    for (const row of rows) {
+      const item = document.createElement('div');
+      item.className = 'rank-entry' + (row.is_me ? ' is-me' : '');
+      const place = document.createElement('span');
+      place.className = 'rank-place';
+      place.textContent = Number(row.place) <= 3 ? ['🥇','🥈','🥉'][Number(row.place) - 1] : '#' + row.place;
+      const player = document.createElement('div');
+      player.className = 'rank-player';
+      const name = document.createElement('strong');
+      name.textContent = (row.player_name || 'Jogador') + (row.is_me ? ' · Você' : '');
+      const handle = document.createElement('small');
+      handle.textContent = row.player_handle ? '@' + row.player_handle : 'Jogador do álbum';
+      player.append(name, handle);
+      const score = document.createElement('div');
+      score.className = 'rank-score';
+      const main = document.createElement('b');
+      main.textContent = rankingSort === 'rebirths' ? precise(Number(row.rebirth_count)) + ' 🌰' : format(Number(row.caju_total)) + ' 🧃';
+      const secondary = document.createElement('small');
+      secondary.textContent = rankingSort === 'rebirths' ? format(Number(row.caju_total)) + ' copos' : row.rebirth_count + ' renasc.';
+      score.append(main, secondary);
+      item.append(place, player, score);
+      list.append(item);
+    }
+  }
+  async function loadRanking() {
+    const requestId = ++rankingRequest;
+    if (!cloud.user) {
+      $('rankingList').replaceChildren();
+      $('rankingStatus').textContent = 'Entre com a conta do álbum para ver o ranking.';
+      return;
+    }
+    $('refreshRanking').disabled = true;
+    $('rankingStatus').textContent = 'Atualizando ranking…';
+    const userId = cloud.user.id;
+    const sort = rankingSort;
+    try {
+      save();
+      const synced = await cloud.flush();
+      const rows = await cloud.leaderboard(sort);
+      if (requestId !== rankingRequest || cloud.user?.id !== userId) return;
+      showRanking(Array.isArray(rows) ? rows : []);
+      $('rankingStatus').textContent = synced ? 'Atualizado com sua partida salva.' : 'Seu progresso local ainda não foi sincronizado.';
+    } catch (error) {
+      if (requestId === rankingRequest) $('rankingStatus').textContent = 'Não foi possível carregar o ranking: ' + error.message;
+    } finally {
+      if (requestId === rankingRequest) $('refreshRanking').disabled = false;
+    }
+  }
+  document.querySelectorAll('[data-rank]').forEach(button => button.addEventListener('click', () => {
+    rankingSort = button.dataset.rank;
+    document.querySelectorAll('[data-rank]').forEach(option => {
+      const selected = option === button;
+      option.classList.toggle('selected', selected);
+      option.setAttribute('aria-pressed', String(selected));
+    });
+    loadRanking();
+  }));
+  $('refreshRanking').addEventListener('click', loadRanking);
   function setTab(name) {
-    for (const tab of ['Upgrades','Achievements','Prestige']) {
+    for (const tab of ['Upgrades','Achievements','Prestige','Leaderboard']) {
       const active = tab === name;
       $('tab' + tab).classList.toggle('active', active);
       $('tab' + tab).setAttribute('aria-selected', String(active));
       $(tab.toLowerCase() + 'Panel').hidden = !active;
     }
+    if (name === 'Leaderboard') loadRanking();
   }
-  ['Upgrades','Achievements','Prestige'].forEach(name => $('tab' + name).addEventListener('click', () => setTab(name)));
+  ['Upgrades','Achievements','Prestige','Leaderboard'].forEach(name => $('tab' + name).addEventListener('click', () => setTab(name)));
   const dialog = $('rebirthDialog');
   $('rebirthButton').addEventListener('click', () => {
     if (!C.prestigePending(state)) return;

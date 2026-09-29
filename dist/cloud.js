@@ -136,6 +136,12 @@
     if (window.parent !== window) window.parent.postMessage({ type: 'clicker-reward', coins: result.coins }, ALBUM);
     return result;
   }
+  async function leaderboard(sort) {
+    if (!session?.user) throw new Error('Entre com sua conta do álbum para ver o ranking.');
+    return request('/rest/v1/rpc/get_clicker_leaderboard', {
+      method: 'POST', body: JSON.stringify({ p_sort: sort })
+    });
+  }
   function logout() {
     session = null; revision = 0; queued = null; conflict = false; loadedUser = null;
     clearTimeout(timer);
@@ -164,6 +170,6 @@
       } catch (_) { localStorage.removeItem(STORAGE); }
     }
   }
-  window.CajuCloud = { init, login, logout, queueSave, flush, claimRebirth,
+  window.CajuCloud = { init, login, logout, queueSave, flush, claimRebirth, leaderboard,
     get user() { return session?.user || null; }, get mode() { return session?.mode || 'guest'; } };
 })();
