@@ -95,7 +95,8 @@
   }
   async function flush() {
     if (inFlight) await inFlight;
-    if (!queued || !session?.user || conflict) return;
+    if (!session?.user || conflict) return false;
+    if (!queued) return true;
     const snapshot = queued;
     const userId = session.user.id;
     queued = null;
@@ -106,9 +107,11 @@
       if (session?.user?.id === userId) {
         revision = Number(result.revision);
         status('Salvo na sua conta');
+        return true;
       }
+      return false;
     } catch (error) {
-      if (session?.user?.id !== userId) return;
+      if (session?.user?.id !== userId) return false;
       if (error.code === '40001') {
         conflict = true;
         status('Partida alterada em outra aba. Recarregue para ver a versão mais recente.');
@@ -116,6 +119,7 @@
         queued = queued || snapshot;
         status('Sem conexão com o banco. Progresso salvo neste navegador.');
       }
+      return false;
     } finally {
       inFlight = null;
       if (queued && !conflict) { clearTimeout(timer); timer = setTimeout(flush, 8000); }

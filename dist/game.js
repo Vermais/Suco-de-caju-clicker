@@ -30,12 +30,12 @@
 
   function save() {
     state.savedAt = Date.now();
-    try {
-      localStorage.setItem(cloud.user ? userSaveKey(cloud.user.id) : saveKey, JSON.stringify(state));
-      if (cloud.user) cloud.queueSave(state);
-      else $('saveStatus').textContent = 'Progresso local';
-    }
-    catch (_) { $('saveStatus').textContent = 'Sem espaço para salvar'; }
+    let localSaved = false;
+    try { localStorage.setItem(cloud.user ? userSaveKey(cloud.user.id) : saveKey, JSON.stringify(state)); localSaved = true; }
+    catch (_) { $('saveStatus').textContent = 'Sem espaço para salvar neste navegador'; }
+    if (cloud.user) cloud.queueSave(state);
+    else if (localSaved) $('saveStatus').textContent = 'Progresso local';
+    return localSaved;
   }
   function toast(message) {
     const box = $('toast');
@@ -44,6 +44,23 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => box.classList.remove('show'), 2700);
   }
+  $('saveButton').addEventListener('click', async () => {
+    const button = $('saveButton');
+    button.disabled = true;
+    button.textContent = 'Salvando…';
+    try {
+      const localSaved = save();
+      if (cloud.user) {
+        const synced = await cloud.flush();
+        toast(synced ? 'Jogo salvo na sua conta!' : localSaved ? 'Salvo neste navegador. Sincronização pendente.' : 'Não foi possível salvar a partida.');
+      } else {
+        toast(localSaved ? 'Jogo salvo neste navegador! Entre para sincronizar.' : 'Não foi possível salvar neste navegador.');
+      }
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Salvar jogo';
+    }
+  });
   function setAlbumStatus(message, connected = false) {
     const status = $('albumRewardStatus');
     status.textContent = message;
