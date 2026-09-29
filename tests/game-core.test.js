@@ -89,7 +89,8 @@ test('autoclicker não consegue registrar mais de dez cliques por segundo', () =
   const accepted = Array.from({ length: 1000 }, (_, i) => allow(i));
   assert.equal(accepted.filter(Boolean).length, 10);
   assert.equal(allow(1000), true);
-  assert.equal(allow(1001), true);
+  assert.equal(allow(1001), false);
+  assert.equal(allow(1090), true);
 });
 
 test('skin escolhida sobrevive ao salvamento e ao renascimento', () => {

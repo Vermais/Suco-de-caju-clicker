@@ -86,12 +86,14 @@
   const prestigePending = state => Math.max(0, prestigePotential(state.allTime) - state.prestige);
   const upgradeUnlocked = (u, state) => u.building === undefined ? state.runProduced >= u.unlock : state.owned[u.building] >= u.count;
   const boostMultiplier = timed => timed === true ? 7 : Number.isFinite(timed) && timed > 0 ? timed : 1;
-  function createClickLimiter(limit = 10, interval = 1000) {
+  function createClickLimiter(limit = 10, interval = 1000, minGap = 90) {
     const recent = [];
+    let lastAccepted = -Infinity;
     return now => {
       while (recent.length && now - recent[0] >= interval) recent.shift();
-      if (recent.length >= limit) return false;
+      if (now - lastAccepted < minGap || recent.length >= limit) return false;
       recent.push(now);
+      lastAccepted = now;
       return true;
     };
   }

@@ -3,6 +3,7 @@
   const C = window.CajuCore;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
+  const gameVersion = '2026-09-29-2';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -21,6 +22,8 @@
   let toastTimer;
   let rankingSort = 'rebirths';
   let rankingRequest = 0;
+  let updatePending = false;
+  let checkingVersion = false;
   const buildingButtons = [];
   const buildingList = $('buildingList');
   const upgradeList = $('upgradeList');
@@ -300,6 +303,7 @@
     setTimeout(() => element.remove(), 850);
   }
   $('juiceButton').addEventListener('click', event => {
+    if (!event.isTrusted || document.hidden) return;
     if (!allowClick(performance.now())) return;
     const gain = C.clickPower(state, currentBoost()?.click || 1);
     earn(gain); state.clicks++;
@@ -456,10 +460,30 @@
       if (gain) { earn(gain); toast('Produção ausente: +' + format(gain)); }
       state.savedAt = Date.now();
       lastFrame = performance.now();
-      checkAchievements(); render(); save();
+      checkAchievements(); render(); save(); checkForUpdate();
     }
   });
+  async function checkForUpdate() {
+    if (updatePending || checkingVersion || document.hidden) return;
+    checkingVersion = true;
+    try {
+      const response = await fetch('./version.json?check=' + Date.now(), { cache: 'no-store' });
+      if (!response.ok) return;
+      const latest = await response.json();
+      if (typeof latest.version !== 'string' || latest.version === gameVersion || document.querySelector('dialog[open]')) return;
+      updatePending = true;
+      if (!save() || (cloud.user && !(await cloud.flush()))) {
+        updatePending = false;
+        $('saveStatus').textContent = 'Atualização pendente: salve a partida para continuar';
+        return;
+      }
+      window.location.reload();
+    } catch (_) { updatePending = false; }
+    finally { checkingVersion = false; }
+  }
   window.addEventListener('beforeunload', save);
   setInterval(() => { if (!document.hidden) save(); }, 5000);
+  setInterval(checkForUpdate, 45000);
+  setTimeout(checkForUpdate, 12000);
   renderAchievements(); checkAchievements(); render(); requestAnimationFrame(frame);
 })();
