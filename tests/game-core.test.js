@@ -84,13 +84,31 @@ test('eventos têm recompensas distintas e mantêm seus dados no salvamento', ()
   assert.equal(restored.eventStats.total, 2);
 });
 
-test('autoclicker não consegue registrar mais de dez cliques por segundo', () => {
-  const allow = C.createClickLimiter();
-  const accepted = Array.from({ length: 1000 }, (_, i) => allow(i));
-  assert.equal(accepted.filter(Boolean).length, 10);
-  assert.equal(allow(1000), true);
-  assert.equal(allow(1001), false);
-  assert.equal(allow(1090), true);
+test('rajada de autoclicker entra em proteção e não produz continuamente', () => {
+  const state = C.newState();
+  const start = state.clickDefense.lastAt;
+  const attempts = Array.from({ length: 1000 }, (_, i) => C.attemptClick(state, start + i));
+  assert.ok(attempts.filter(a => a.allowed).length <= 1);
+  assert.ok(state.clickDefense.cooldownUntil >= start + 30000);
+  assert.equal(C.attemptClick(state, start + 2000).allowed, false);
+  assert.equal(C.normalize(JSON.parse(JSON.stringify(state))).clickDefense.cooldownUntil, state.clickDefense.cooldownUntil);
+  state.allTime = 1e9;
+  C.rebirth(state);
+  assert.equal(C.attemptClick(state, start + 3000).allowed, false);
+});
+
+test('cliques manuais variados funcionam; macro em ritmo fixo é bloqueada', () => {
+  const human = C.newState();
+  const start = human.clickDefense.lastAt;
+  for (const gap of [0, 270, 595, 1000, 1420, 1775]) assert.equal(C.attemptClick(human, start + gap).allowed, true);
+  const macro = C.newState();
+  const begin = macro.clickDefense.lastAt;
+  let caught = false;
+  for (let i = 0; i < 25; i++) {
+    const result = C.attemptClick(macro, begin + i * 200);
+    if (result.reason === 'cooldown') { caught = true; break; }
+  }
+  assert.equal(caught, true);
 });
 
 test('skin escolhida sobrevive ao salvamento e ao renascimento', () => {
@@ -99,4 +117,13 @@ test('skin escolhida sobrevive ao salvamento e ao renascimento', () => {
   C.rebirth(state);
   assert.equal(state.skin, 'pedro67');
   assert.equal(C.normalize({ skin: 'desconhecida' }).skin, 'cup');
+});
+
+test('novos prédios e eventos são incluídos em partidas antigas', () => {
+  const state = C.normalize({ owned: Array(12).fill(1), eventStats: { total: 3, golden: 3 } });
+  assert.equal(state.owned.length, 14);
+  assert.equal(state.owned[13], 0);
+  assert.equal(state.eventStats.meteor, 0);
+  assert.ok(C.eventReward(state, 'meteor').gain >= 150);
+  assert.equal(C.eventReward(state, 'harvest').boost.production, 4);
 });

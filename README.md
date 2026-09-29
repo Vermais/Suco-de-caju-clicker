@@ -1,6 +1,6 @@
 # Suco de Caju Clicker
 
-Jogo incremental para navegador. Clique para produzir suco de caju, compre máquinas e melhorias, participe de eventos e renasça para ganhar castanhas permanentes. Há um limite de dez cliques por segundo, com intervalo mínimo de 90 ms, e cliques sintéticos são ignorados. O progresso é salvo automaticamente no navegador e pode ser sincronizado com a conta do álbum.
+Jogo incremental para navegador. Clique para produzir suco de caju, compre máquinas e melhorias, participe de eventos e renasça para ganhar castanhas permanentes. A produção manual aceita até cinco cliques por segundo, com intervalo mínimo de 170 ms e uma reserva de doze cliques que recupera dois por segundo. Rajadas rejeitadas e ritmos mecânicos provocam uma pausa temporária; cliques sintéticos são ignorados. O progresso é salvo automaticamente no navegador e pode ser sincronizado com a conta do álbum.
 
 ## Executar
 
