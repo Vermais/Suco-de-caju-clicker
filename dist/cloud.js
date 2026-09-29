@@ -89,6 +89,7 @@
   function queueSave(state) {
     if (!session?.user || conflict) return;
     queued = JSON.parse(JSON.stringify(state));
+    status('Sincronizando partida…');
     clearTimeout(timer);
     timer = setTimeout(flush, 1800);
   }
@@ -96,14 +97,18 @@
     if (inFlight) await inFlight;
     if (!queued || !session?.user || conflict) return;
     const snapshot = queued;
+    const userId = session.user.id;
     queued = null;
     inFlight = (async () => { try {
       const result = await request('/rest/v1/rpc/save_clicker_progress', {
         method: 'POST', body: JSON.stringify({ p_state: snapshot, p_expected_revision: revision })
       });
-      revision = Number(result.revision);
-      status('Salvo na sua conta');
+      if (session?.user?.id === userId) {
+        revision = Number(result.revision);
+        status('Salvo na sua conta');
+      }
     } catch (error) {
+      if (session?.user?.id !== userId) return;
       if (error.code === '40001') {
         conflict = true;
         status('Partida alterada em outra aba. Recarregue para ver a versão mais recente.');
