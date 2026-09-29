@@ -21,7 +21,7 @@ create or replace function public.save_clicker_progress(
 ) returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
   uid uuid := auth.uid();
@@ -61,5 +61,5 @@ begin
 end;
 $$;
 
-revoke all on function public.save_clicker_progress(jsonb, bigint) from public, anon;
+revoke all on function public.save_clicker_progress(jsonb, bigint) from public, anon, authenticated;
 grant execute on function public.save_clicker_progress(jsonb, bigint) to authenticated;
