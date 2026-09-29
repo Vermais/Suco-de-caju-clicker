@@ -3,7 +3,7 @@
   const C = window.CajuCore;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-29-3';
+  const gameVersion = '2026-09-29-4';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -18,7 +18,6 @@
   let buyMode = '1';
   let lastFrame = performance.now();
   let lastUi = 0;
-  let lastGuardUi = 0;
   let lastUpgradeSignature = null;
   let toastTimer;
   let rankingSort = 'rebirths';
@@ -280,11 +279,6 @@
     const label = boost?.id === 'golden' ? 'Safra dourada' : boost?.id === 'rush' ? 'Hora do pedido' : boost?.id === 'harvest' ? 'Grande colheita' : 'Festival do caju';
     $('bonusStatus').textContent = boost ? `${label}: produção ${boost.production}× e clique ${boost.click}× por ${seconds}s` : pedroSkin ? 'Clique no Pedro Victor para preparar suco' : 'Clique no copo para preparar suco';
     $('bonusStatus').classList.toggle('active', !!boost);
-    const guard = state.clickDefense;
-    const cooldown = Math.ceil((guard.cooldownUntil - Date.now()) / 1000);
-    const energy = Math.floor(Math.min(12, guard.energy + Math.max(0, Date.now() - guard.lastAt) / 500));
-    $('clickStatus').textContent = cooldown > 0 ? `Proteção ativa: aguarde ${cooldown}s para clicar` : `Reserva de cliques: ${energy}/12 · recupera 2 por segundo`;
-    $('clickStatus').classList.toggle('cooldown', cooldown > 0);
     const pendingEvent = state.pendingEvent && state.pendingEvent.until > Date.now() ? C.EVENTS.find(e => e.id === state.pendingEvent.id) : null;
     eventButton.hidden = !pendingEvent;
     if (pendingEvent) {
@@ -308,15 +302,6 @@
     setTimeout(() => element.remove(), 850);
   }
   $('juiceButton').addEventListener('click', event => {
-    if (!event.isTrusted || document.hidden) return;
-    const previousCooldown = state.clickDefense.cooldownUntil;
-    const current = Date.now();
-    const attempt = C.attemptClick(state, current);
-    if (!attempt.allowed) {
-      if (state.clickDefense.cooldownUntil > previousCooldown) { toast('Cliques automáticos detectados. Aguarde 30 segundos.'); save(); }
-      if (current - lastGuardUi > 250 || state.clickDefense.cooldownUntil > previousCooldown) { lastGuardUi = current; render(); }
-      return;
-    }
     const gain = C.clickPower(state, currentBoost()?.click || 1);
     earn(gain); state.clicks++;
     floatText('+' + format(gain), event);

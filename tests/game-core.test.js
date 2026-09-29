@@ -84,31 +84,10 @@ test('eventos têm recompensas distintas e mantêm seus dados no salvamento', ()
   assert.equal(restored.eventStats.total, 2);
 });
 
-test('rajada de autoclicker entra em proteção e não produz continuamente', () => {
-  const state = C.newState();
-  const start = state.clickDefense.lastAt;
-  const attempts = Array.from({ length: 1000 }, (_, i) => C.attemptClick(state, start + i));
-  assert.ok(attempts.filter(a => a.allowed).length <= 1);
-  assert.ok(state.clickDefense.cooldownUntil >= start + 30000);
-  assert.equal(C.attemptClick(state, start + 2000).allowed, false);
-  assert.equal(C.normalize(JSON.parse(JSON.stringify(state))).clickDefense.cooldownUntil, state.clickDefense.cooldownUntil);
-  state.allTime = 1e9;
-  C.rebirth(state);
-  assert.equal(C.attemptClick(state, start + 3000).allowed, false);
-});
-
-test('cliques manuais variados funcionam; macro em ritmo fixo é bloqueada', () => {
-  const human = C.newState();
-  const start = human.clickDefense.lastAt;
-  for (const gap of [0, 270, 595, 1000, 1420, 1775]) assert.equal(C.attemptClick(human, start + gap).allowed, true);
-  const macro = C.newState();
-  const begin = macro.clickDefense.lastAt;
-  let caught = false;
-  for (let i = 0; i < 25; i++) {
-    const result = C.attemptClick(macro, begin + i * 200);
-    if (result.reason === 'cooldown') { caught = true; break; }
-  }
-  assert.equal(caught, true);
+test('partidas com a antiga proteção carregam sem o bloqueio', () => {
+  const state = C.normalize({ juice: 42, clickDefense: { cooldownUntil: Date.now() + 30000 } });
+  assert.equal(state.juice, 42);
+  assert.equal(state.clickDefense, undefined);
 });
 
 test('skin escolhida sobrevive ao salvamento e ao renascimento', () => {

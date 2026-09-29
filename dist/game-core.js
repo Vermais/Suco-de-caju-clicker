@@ -95,39 +95,6 @@
   const prestigePending = state => Math.max(0, prestigePotential(state.allTime) - state.prestige);
   const upgradeUnlocked = (u, state) => u.building === undefined ? state.runProduced >= u.unlock : state.owned[u.building] >= u.count;
   const boostMultiplier = timed => timed === true ? 7 : Number.isFinite(timed) && timed > 0 ? timed : 1;
-  function attemptClick(state, now) {
-    const d = state.clickDefense;
-    const elapsed = Math.max(0, Math.min(60, (now - d.lastAt) / 1000));
-    d.energy = Math.min(12, d.energy + elapsed * 2);
-    d.lastAt = now;
-    d.recent = d.recent.filter(t => now - t < 1000 && t <= now);
-    if (now - d.rejectWindowAt >= 1000) { d.rejectWindowAt = now; d.rejected = 0; }
-    if (now < d.cooldownUntil) return { allowed: false, reason: 'cooldown' };
-    const reject = reason => {
-      d.rejected++;
-      if (d.rejected >= 20) {
-        d.cooldownUntil = now + 30000;
-        d.rejected = 0;
-        return { allowed: false, reason: 'cooldown' };
-      }
-      return { allowed: false, reason };
-    };
-    if (d.energy < 1) return reject('energy');
-    if (now - d.lastClickAt < 170 || d.recent.length >= 5) return reject('speed');
-    const gap = d.lastClickAt ? now - d.lastClickAt : 0;
-    if (gap > 0 && gap < 700) {
-      d.intervals = [...d.intervals, gap].slice(-7);
-      if (d.intervals.length === 7 && Math.max(...d.intervals) - Math.min(...d.intervals) <= 8) {
-        d.cooldownUntil = now + 30000;
-        d.intervals = [];
-        return { allowed: false, reason: 'cooldown' };
-      }
-    } else d.intervals = [];
-    d.energy--;
-    d.lastClickAt = now;
-    d.recent.push(now);
-    return { allowed: true, reason: null };
-  }
   function production(state, timed = false) {
     let cps = BUILDINGS.reduce((sum, b) => {
       const power = UPGRADES.reduce((m, u) => m * (u.building === b.id && state.upgrades.includes(u.id) ? u.buildingMult : 1), 1);
@@ -155,8 +122,7 @@
   }
   function newState() {
     return { juice: 0, allTime: 0, runProduced: 0, owned: BUILDINGS.map(() => 0), upgrades: [], achievements: [], prestige: 0, rebirths: 0, clicks: 0, skin: 'cup',
-      eventStats: { total: 0, golden: 0, rain: 0, rush: 0, festival: 0, meteor: 0, harvest: 0 }, pendingEvent: null, activeBoost: null, nextEventAt: Date.now() + 65000,
-      clickDefense: { energy: 12, lastAt: Date.now(), lastClickAt: 0, recent: [], intervals: [], rejectWindowAt: Date.now(), rejected: 0, cooldownUntil: 0 }, savedAt: Date.now() };
+      eventStats: { total: 0, golden: 0, rain: 0, rush: 0, festival: 0, meteor: 0, harvest: 0 }, pendingEvent: null, activeBoost: null, nextEventAt: Date.now() + 65000, savedAt: Date.now() };
   }
   function normalize(raw) {
     const base = newState();
@@ -169,17 +135,12 @@
     const pending = EVENTS.find(e => e.id === raw.pendingEvent?.id) && safe(raw.pendingEvent?.until) > Date.now() ? { id: raw.pendingEvent.id, until: raw.pendingEvent.until } : null;
     const boost = EVENTS.find(e => e.id === raw.activeBoost?.id) && safe(raw.activeBoost?.until) > Date.now()
       ? { id: raw.activeBoost.id, until: raw.activeBoost.until, production: Math.min(7, Math.max(1, safe(raw.activeBoost.production))), click: Math.min(7, Math.max(1, safe(raw.activeBoost.click))) } : null;
-    const guard = raw.clickDefense || {};
-    const clickDefense = { energy: Math.min(12, safe(guard.energy ?? 12)), lastAt: safe(guard.lastAt) || Date.now(), lastClickAt: safe(guard.lastClickAt),
-      recent: (Array.isArray(guard.recent) ? guard.recent : []).filter(t => Number.isFinite(t) && t > Date.now() - 1000 && t <= Date.now()).slice(-5),
-      intervals: (Array.isArray(guard.intervals) ? guard.intervals : []).filter(t => Number.isFinite(t) && t > 0 && t < 700).slice(-7),
-      rejectWindowAt: safe(guard.rejectWindowAt) || Date.now(), rejected: Math.min(19, Math.floor(safe(guard.rejected))), cooldownUntil: safe(guard.cooldownUntil) };
     return { ...base, juice: safe(raw.juice), allTime, runProduced: safe(raw.runProduced ?? raw.lifetime),
       owned: BUILDINGS.map((_, i) => Math.max(0, Math.floor(safe(raw.owned?.[i])))),
       upgrades: [...new Set(mapped)].filter(id => UPGRADES.some(u => u.id === id)),
       achievements: [...new Set(Array.isArray(raw.achievements) ? raw.achievements : [])].filter(id => ACHIEVEMENTS.some(a => a.id === id)),
       prestige: Math.floor(safe(raw.prestige)), rebirths: Math.floor(safe(raw.rebirths)), clicks: Math.floor(safe(raw.clicks)), skin: raw.skin === 'pedro67' ? 'pedro67' : 'cup',
-      eventStats: stats, pendingEvent: pending, activeBoost: boost, clickDefense,
+      eventStats: stats, pendingEvent: pending, activeBoost: boost,
       nextEventAt: pending ? safe(raw.nextEventAt) || base.nextEventAt : Math.max(safe(raw.nextEventAt), raw.pendingEvent ? Date.now() + 45000 : 0) || base.nextEventAt,
       savedAt: safe(raw.savedAt) || Date.now() };
   }
@@ -198,7 +159,7 @@
     state.nextEventAt = Date.now() + 65000;
     return pending;
   }
-  const api = { BUILDINGS, UPGRADES, ACHIEVEMENTS, EVENTS, price, batchCost, affordableCount, prestigePotential, prestigePending, upgradeUnlocked, production, clickPower, eventReward, attemptClick, newState, normalize, rebirth };
+  const api = { BUILDINGS, UPGRADES, ACHIEVEMENTS, EVENTS, price, batchCost, affordableCount, prestigePotential, prestigePending, upgradeUnlocked, production, clickPower, eventReward, newState, normalize, rebirth };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CajuCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
