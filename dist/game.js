@@ -3,7 +3,7 @@
   const C = window.CajuCore;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-29-6';
+  const gameVersion = '2026-09-29-7';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -31,7 +31,7 @@
   const permanentButtons = [];
   const eventButton = $('eventButton');
   const currentBoost = (now = Date.now()) => state.activeBoost?.until > now ? state.activeBoost : null;
-  const nextEventDelay = () => 65000 + Math.random() * 55000;
+  const nextEventDelay = () => C.eventDelay(state);
 
   function save() {
     state.savedAt = Date.now();
@@ -85,7 +85,7 @@
     return claimAlbumRebirth(pending);
   }
   function addOfflineProgress() {
-    const elapsed = Math.min(4 * 3600, Math.max(0, (Date.now() - state.savedAt) / 1000));
+    const elapsed = Math.min(C.offlineLimit(state), Math.max(0, (Date.now() - state.savedAt) / 1000));
     const offline = Math.floor(C.production(state) * elapsed * C.offlineRate(state));
     if (offline) { earn(offline); toast('Enquanto você esteve fora: +' + format(offline) + ' copos'); save(); }
   }
@@ -284,7 +284,7 @@
     $('prestigeTotal').textContent = format(state.prestige);
     $('prestigeBonus').textContent = '+' + format(C.earnedNuts(state)) + '%';
     $('prestigePending').textContent = format(pending);
-    $('nextPrestige').textContent = format(C.prestigeCost(state, pending + 1));
+    $('nextPrestige').textContent = format(Math.max(0, C.prestigeCost(state, pending + 1) - state.runProduced));
     $('rebirthCount').textContent = state.rebirths;
     $('rebirthButton').disabled = pending < 1;
     $('rebirthButton').textContent = pending ? `Renascer e ganhar ${format(pending)} 🌰` : 'Renascer (ainda sem castanhas)';
@@ -462,7 +462,7 @@
       if (!state.pendingEvent && current >= state.nextEventAt) {
         const roll = Math.random();
         const selected = C.EVENTS[roll < .45 ? 0 : roll < .65 ? 1 : roll < .79 ? 2 : roll < .88 ? 3 : roll < .95 ? 4 : 5];
-        state.pendingEvent = { id: selected.id, until: current + selected.lifetime };
+        state.pendingEvent = { id: selected.id, until: current + C.eventLifetime(state, selected) };
         save();
       }
       if (now - lastUi > 250) { lastUi = now; checkAchievements(); render(); }
@@ -472,7 +472,7 @@
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) save();
     else {
-      const gap = Math.min(4 * 3600, Math.max(0, (Date.now() - state.savedAt) / 1000));
+      const gap = Math.min(C.offlineLimit(state), Math.max(0, (Date.now() - state.savedAt) / 1000));
       const gain = Math.floor(C.production(state) * gap * C.offlineRate(state));
       if (gain) { earn(gain); toast('Produção ausente: +' + format(gain)); }
       state.savedAt = Date.now();

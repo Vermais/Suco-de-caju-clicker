@@ -14,6 +14,14 @@ Atualize **os dois valores** `gameVersion` em `dist/game.js` e `version` em `dis
 
 ## Renascimento e buffs
 
-O renascimento converte o saldo atual com uma curva cúbica inspirada no Cookie Clicker. Se `E` é o total de castanhas já conquistadas, ganhar `N` novas exige `1 bilhão × ((E + N)³ − E³)` copos em saldo. A primeira exige 1 bilhão; após ela, a próxima exige 7 bilhões; após duas, a próxima exige 19 bilhões. Gastar castanhas não reduz o custo nem permite ganhar novamente o mesmo nível.
+O prestígio usa produção acumulada, como o Cookie Clicker: comprar máquinas e melhorias não reduz o progresso. Mantemos o primeiro renascimento em 1 bilhão produzido, mas ele rende 5 castanhas. A curva é `floor(5 × raiz_cúbica(produção acumulada / 1 bilhão))`, com entrada mínima de 1 bilhão. 8 bilhões rendem 10 níveis, 27 bilhões rendem 15. Apenas os níveis ainda não conquistados viram novas castanhas. Após renascer exatamente em 1 bilhão, a próxima castanha exige mais 728 milhões produzidos; o custo marginal continua crescente. Sobras entre níveis são preservadas. Kits e produtores iniciais não geram prestígio gratuito.
 
-Cada castanha conquistada dá +1% de bônus. A loja mantém os cinco buffs permanentes, com custos que triplicam por nível. A produção cresce ×1,25 por nível; o primeiro buff de clique dobra seu valor e os seguintes dão ×1,25. Prêmios de eventos sobem 15% e duração 10% por nível. Castanhas e níveis comprados em versões anteriores são preservados; os efeitos passam a seguir o novo balanceamento.
+Cada castanha conquistada dá +1% de bônus, mesmo depois de gastar. A loja agora tem 12 buffs, com preços que dobram por nível: produção, clique, kit inicial, produção ausente, eventos, equipe inicial, sinergia entre produtores, conquistas, fração de produção por clique, frequência de eventos, janela de coleta e limite de horas ausentes. O pacote inicial de produção, kit, clique e produção ausente custa as 5 primeiras castanhas. A equipe inicial só é entregue no próximo renascimento, assim como o kit.
+
+São 18 produtores (4 novos), com 11 patamares de melhorias individuais e sinergias entre produtores vizinhos, além de novas melhorias globais e de clique. As melhorias de 100 e 200 unidades ficaram mais acessíveis.
+
+Salvamentos anteriores preservam saldo, produtores, melhorias, níveis e castanhas. `prestigeBase` migra os níveis já conquistados para uma base compatível com a nova curva e soma a produção da safra atual. Depois de cada rebirth, essa base inclui a produção contabilizada; normalizações posteriores não a recalculam. Os dados adicionais continuam no JSON de salvamento existente, sem alteração de esquema.
+
+## Verificar
+
+Execute `node tests/game-core.test.js` e `node --check dist/game.js`.
