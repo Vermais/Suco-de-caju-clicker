@@ -14,4 +14,6 @@ Atualize **os dois valores** `gameVersion` em `dist/game.js` e `version` em `dis
 
 ## Renascimento e buffs
 
-O renascimento converte o saldo atual em `floor(sqrt(saldo / 1000000))` castanhas, a partir de um milhão de copos. O saldo de castanhas pode ser gasto na loja de cinco buffs permanentes; cada nível tem custo crescente. O total de castanhas conquistadas mantém seu bônus de produção e clique mesmo depois de compras. Castanhas e buffs antigos são preservados pelo salvamento.
+O renascimento converte o saldo atual com uma curva cúbica inspirada no Cookie Clicker. Se `E` é o total de castanhas já conquistadas, ganhar `N` novas exige `1 bilhão × ((E + N)³ − E³)` copos em saldo. A primeira exige 1 bilhão; após ela, a próxima exige 7 bilhões; após duas, a próxima exige 19 bilhões. Gastar castanhas não reduz o custo nem permite ganhar novamente o mesmo nível.
+
+Cada castanha conquistada dá +1% de bônus. A loja mantém os cinco buffs permanentes, com custos que triplicam por nível. A produção cresce ×1,25 por nível; o primeiro buff de clique dobra seu valor e os seguintes dão ×1,25. Prêmios de eventos sobem 15% e duração 10% por nível. Castanhas e níveis comprados em versões anteriores são preservados; os efeitos passam a seguir o novo balanceamento.
