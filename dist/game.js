@@ -3,7 +3,7 @@
   const C = window.CajuCore;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-29-4';
+  const gameVersion = '2026-09-29-5';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -28,6 +28,7 @@
   const buildingList = $('buildingList');
   const upgradeList = $('upgradeList');
   const achievementList = $('achievementList');
+  const permanentButtons = [];
   const eventButton = $('eventButton');
   const currentBoost = (now = Date.now()) => state.activeBoost?.until > now ? state.activeBoost : null;
   const nextEventDelay = () => 65000 + Math.random() * 55000;
@@ -85,7 +86,7 @@
   }
   function addOfflineProgress() {
     const elapsed = Math.min(4 * 3600, Math.max(0, (Date.now() - state.savedAt) / 1000));
-    const offline = Math.floor(C.production(state) * elapsed * .4);
+    const offline = Math.floor(C.production(state) * elapsed * C.offlineRate(state));
     if (offline) { earn(offline); toast('Enquanto você esteve fora: +' + format(offline) + ' copos'); save(); }
   }
   cloud.init({
@@ -153,7 +154,7 @@
     const count = state.owned.reduce((a, b) => a + b, 0);
     let changed = false;
     for (const a of C.ACHIEVEMENTS) {
-      const value = a.kind === 'run' ? state.runProduced : a.kind === 'allTime' ? state.allTime : a.kind === 'buildings' ? count : a.kind === 'clicks' ? state.clicks : a.kind === 'prestige' ? state.prestige : a.kind === 'events' ? state.eventStats.total : a.kind === 'event' ? state.eventStats[a.event] : state.rebirths;
+      const value = a.kind === 'run' ? state.runProduced : a.kind === 'allTime' ? state.allTime : a.kind === 'buildings' ? count : a.kind === 'clicks' ? state.clicks : a.kind === 'prestige' ? C.earnedNuts(state) : a.kind === 'events' ? state.eventStats.total : a.kind === 'event' ? state.eventStats[a.event] : state.rebirths;
       if (value >= a.at && !state.achievements.includes(a.id)) {
         state.achievements.push(a.id);
         changed = true;
@@ -237,6 +238,18 @@
       achievementList.append(item);
     });
   }
+  C.PERMANENT_UPGRADES.forEach(u => {
+    const button = document.createElement('button');
+    button.className = 'upgrade';
+    button.innerHTML = `<span class="upgrade-icon" aria-hidden="true">${u.icon}</span><span class="upgrade-main"><strong>${u.name}</strong><small>${u.description}</small><small class="permanent-level"></small></span><span class="upgrade-price"></span>`;
+    button.addEventListener('click', () => {
+      if (!C.buyPermanent(state, u.id)) return;
+      toast(u.name + ': buff permanente comprado!');
+      render(); save();
+    });
+    $('permanentList').append(button);
+    permanentButtons.push(button);
+  });
   function render(force = false) {
     const pedroSkin = state.skin === 'pedro67';
     const skinImage = $('skinImage');
@@ -269,12 +282,19 @@
     renderUpgrades();
     const pending = C.prestigePending(state);
     $('prestigeTotal').textContent = format(state.prestige);
-    $('prestigeBonus').textContent = '+' + format(state.prestige * 10) + '%';
+    $('prestigeBonus').textContent = '+' + format(C.earnedNuts(state) * 10) + '%';
     $('prestigePending').textContent = format(pending);
-    $('nextPrestige').textContent = format((C.prestigePotential(state.allTime) + 1) ** 2 * 1e9);
+    $('nextPrestige').textContent = format((pending + 1) ** 2 * 1e6);
     $('rebirthCount').textContent = state.rebirths;
     $('rebirthButton').disabled = pending < 1;
     $('rebirthButton').textContent = pending ? `Renascer e ganhar ${format(pending)} 🌰` : 'Renascer (ainda sem castanhas)';
+    C.PERMANENT_UPGRADES.forEach((u, i) => {
+      const level = C.permanentLevel(state, u.id);
+      const maxed = level >= u.max;
+      permanentButtons[i].disabled = maxed || state.prestige < C.permanentCost(state, u);
+      permanentButtons[i].querySelector('.permanent-level').textContent = `Nível ${level}/${u.max}`;
+      permanentButtons[i].querySelector('.upgrade-price').textContent = maxed ? 'MÁX' : format(C.permanentCost(state, u)) + ' 🌰';
+    });
     const seconds = boost ? Math.ceil((boost.until - Date.now()) / 1000) : 0;
     const label = boost?.id === 'golden' ? 'Safra dourada' : boost?.id === 'rush' ? 'Hora do pedido' : boost?.id === 'harvest' ? 'Grande colheita' : 'Festival do caju';
     $('bonusStatus').textContent = boost ? `${label}: produção ${boost.production}× e clique ${boost.click}× por ${seconds}s` : pedroSkin ? 'Clique no Pedro Victor para preparar suco' : 'Clique no copo para preparar suco';
@@ -453,7 +473,7 @@
     if (document.hidden) save();
     else {
       const gap = Math.min(4 * 3600, Math.max(0, (Date.now() - state.savedAt) / 1000));
-      const gain = Math.floor(C.production(state) * gap * .4);
+      const gain = Math.floor(C.production(state) * gap * C.offlineRate(state));
       if (gain) { earn(gain); toast('Produção ausente: +' + format(gain)); }
       state.savedAt = Date.now();
       lastFrame = performance.now();
