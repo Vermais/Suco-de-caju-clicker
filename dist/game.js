@@ -275,7 +275,7 @@
     $('rebirthButton').textContent = pending ? `Renascer e ganhar ${format(pending)} 🌰` : 'Renascer (ainda sem castanhas)';
     const seconds = boost ? Math.ceil((boost.until - Date.now()) / 1000) : 0;
     const label = boost?.id === 'golden' ? 'Safra dourada' : boost?.id === 'rush' ? 'Hora do pedido' : 'Festival do caju';
-    $('bonusStatus').textContent = boost ? `${label}: produção ${boost.production}× e clique ${boost.click}× por ${seconds}s` : 'Clique no copo para preparar suco';
+    $('bonusStatus').textContent = boost ? `${label}: produção ${boost.production}× e clique ${boost.click}× por ${seconds}s` : pedroSkin ? 'Clique no Pedro Victor para preparar suco' : 'Clique no copo para preparar suco';
     $('bonusStatus').classList.toggle('active', !!boost);
     const pendingEvent = state.pendingEvent && state.pendingEvent.until > Date.now() ? C.EVENTS.find(e => e.id === state.pendingEvent.id) : null;
     eventButton.hidden = !pendingEvent;
