@@ -4,6 +4,10 @@
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
   const oldKey = 'suco-de-caju-clicker-v1';
+  const pendingRewardKey = 'suco-de-caju-clicker-pending-album-rebirth-v1';
+  const albumOrigin = 'https://album-pedro-victor.vercel.app';
+  const supabaseUrl = 'https://umayamlvxcdccmkpghmg.supabase.co';
+  const supabaseKey = 'sb_publishable_R5rN_XnQ7u_B-bv900ZY1g_K6V_wIIl';
   const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
   const compact = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 2 });
   const format = value => !Number.isFinite(value) ? '∞' : value < 1000 ? Math.floor(value).toLocaleString('pt-BR') : compact.format(value);
@@ -19,6 +23,7 @@
   let lastUi = 0;
   let lastUpgradeSignature = null;
   let toastTimer;
+  let albumAccessToken = null;
   const buildingButtons = [];
   const buildingList = $('buildingList');
   const upgradeList = $('upgradeList');
@@ -37,6 +42,42 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => box.classList.remove('show'), 2700);
   }
+  function setAlbumStatus(message, connected = false) {
+    const status = $('albumRewardStatus');
+    status.textContent = message;
+    status.style.color = connected ? '#8de1a8' : '';
+  }
+  function requestAlbumConnection() {
+    if (window.parent !== window) window.parent.postMessage({ type: 'clicker-ready' }, albumOrigin);
+  }
+  async function claimAlbumRebirth(rebirthCount) {
+    if (!albumAccessToken) throw new Error('Abra o clicker pelo álbum para receber os 10 🧃.');
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_clicker_rebirth`, {
+      method: 'POST',
+      headers: { apikey: supabaseKey, authorization: `Bearer ${albumAccessToken}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ p_rebirth_count: rebirthCount })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 401) { albumAccessToken = null; requestAlbumConnection(); }
+      throw new Error(payload.message || 'Não foi possível enviar a recompensa ao álbum.');
+    }
+    localStorage.removeItem(pendingRewardKey);
+    setAlbumStatus(`Conectado ao álbum · último renascimento: +${payload.reward || 0} 🧃`, true);
+    if (window.parent !== window) window.parent.postMessage({ type: 'clicker-reward', coins: payload.coins, reward: payload.reward }, albumOrigin);
+    return payload;
+  }
+  async function syncPendingAlbumReward() {
+    const pending = Number(localStorage.getItem(pendingRewardKey) || 0);
+    if (!pending || !albumAccessToken) return null;
+    return claimAlbumRebirth(pending);
+  }
+  window.addEventListener('message', event => {
+    if (event.origin !== albumOrigin || event.data?.type !== 'album-auth') return;
+    albumAccessToken = typeof event.data.accessToken === 'string' ? event.data.accessToken : null;
+    setAlbumStatus(albumAccessToken ? 'Conectado ao Álbum Pedro Victor · cada renascimento vale +10 🧃' : 'Entre no álbum para receber recompensas.', Boolean(albumAccessToken));
+    if (albumAccessToken) syncPendingAlbumReward().catch(error => setAlbumStatus(error.message));
+  });
   function earn(amount) {
     if (!Number.isFinite(amount) || amount <= 0) return;
     state.juice += amount;
@@ -216,14 +257,21 @@
     dialog.showModal();
   });
   $('cancelRebirth').addEventListener('click', () => dialog.close());
-  $('confirmRebirth').addEventListener('click', () => {
+  $('confirmRebirth').addEventListener('click', async () => {
     const gain = C.rebirth(state);
     dialog.close();
     if (!gain) return;
     frenzyUntil = 0; golden.hidden = true; goldenUntil = 0;
     nextGolden = Date.now() + 60000;
     checkAchievements(); lastUpgradeSignature = '';
-    renderAchievements(); render(true); save(); toast('Nova safra! +' + format(gain) + ' castanhas');
+    renderAchievements(); render(true); save();
+    localStorage.setItem(pendingRewardKey, String(state.rebirths));
+    try {
+      const reward = await claimAlbumRebirth(state.rebirths);
+      toast('Nova safra! +' + format(gain) + ' castanhas · +' + reward.reward + ' 🧃 no álbum');
+    } catch (error) {
+      toast('Nova safra! +' + format(gain) + ' castanhas. ' + error.message);
+    }
   });
 
   const elapsed = Math.min(4 * 3600, Math.max(0, (Date.now() - state.savedAt) / 1000));
@@ -254,5 +302,7 @@
   });
   window.addEventListener('beforeunload', save);
   setInterval(() => { if (!document.hidden) save(); }, 5000);
+  requestAlbumConnection();
+  setInterval(requestAlbumConnection, 10 * 60 * 1000);
   renderAchievements(); checkAchievements(); render(); requestAnimationFrame(frame);
 })();
