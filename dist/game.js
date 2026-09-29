@@ -15,9 +15,6 @@
   try { raw = JSON.parse(localStorage.getItem(saveKey) || localStorage.getItem(oldKey)); } catch (_) {}
   let state = C.normalize(raw);
   let buyMode = '1';
-  let goldenUntil = 0;
-  let frenzyUntil = 0;
-  let nextGolden = Date.now() + 55000 + Math.random() * 40000;
   let lastFrame = performance.now();
   let lastUi = 0;
   let lastUpgradeSignature = null;
@@ -28,7 +25,10 @@
   const buildingList = $('buildingList');
   const upgradeList = $('upgradeList');
   const achievementList = $('achievementList');
-  const golden = $('golden');
+  const eventButton = $('eventButton');
+  const allowClick = C.createClickLimiter(10, 1000);
+  const currentBoost = (now = Date.now()) => state.activeBoost?.until > now ? state.activeBoost : null;
+  const nextEventDelay = () => 65000 + Math.random() * 55000;
 
   function save() {
     state.savedAt = Date.now();
@@ -151,7 +151,7 @@
     const count = state.owned.reduce((a, b) => a + b, 0);
     let changed = false;
     for (const a of C.ACHIEVEMENTS) {
-      const value = a.kind === 'run' ? state.runProduced : a.kind === 'buildings' ? count : a.kind === 'clicks' ? state.clicks : state.rebirths;
+      const value = a.kind === 'run' ? state.runProduced : a.kind === 'allTime' ? state.allTime : a.kind === 'buildings' ? count : a.kind === 'clicks' ? state.clicks : a.kind === 'prestige' ? state.prestige : a.kind === 'events' ? state.eventStats.total : a.kind === 'event' ? state.eventStats[a.event] : state.rebirths;
       if (value >= a.at && !state.achievements.includes(a.id)) {
         state.achievements.push(a.id);
         changed = true;
@@ -236,9 +236,21 @@
     });
   }
   function render(force = false) {
+    const pedroSkin = state.skin === 'pedro67';
+    const skinImage = $('skinImage');
+    const skinSource = pedroSkin ? './pedro-67.svg' : './caju.webp';
+    if (skinImage.getAttribute('src') !== skinSource) skinImage.setAttribute('src', skinSource);
+    $('juiceButton').classList.toggle('pedro-skin', pedroSkin);
+    $('juiceButton').setAttribute('aria-label', pedroSkin ? 'Pedro Victor fazendo 6 7: preparar suco de caju' : 'Preparar suco de caju');
+    document.querySelectorAll('[data-skin]').forEach(button => {
+      const selected = button.dataset.skin === state.skin;
+      button.classList.toggle('selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
     $('juiceCount').textContent = format(state.juice);
-    $('cps').textContent = precise(C.production(state, Date.now() < frenzyUntil));
-    $('clickValue').textContent = format(C.clickPower(state, Date.now() < frenzyUntil));
+    const boost = currentBoost();
+    $('cps').textContent = precise(C.production(state, boost?.production || 1));
+    $('clickValue').textContent = format(C.clickPower(state, boost?.click || 1));
     $('runTotal').textContent = format(state.runProduced);
     $('allTime').textContent = format(state.allTime);
     $('ownedTotal').textContent = state.owned.reduce((a,b) => a+b,0) + ' unidades';
@@ -261,9 +273,18 @@
     $('rebirthCount').textContent = state.rebirths;
     $('rebirthButton').disabled = pending < 1;
     $('rebirthButton').textContent = pending ? `Renascer e ganhar ${format(pending)} 🌰` : 'Renascer (ainda sem castanhas)';
-    const seconds = Math.ceil((frenzyUntil - Date.now()) / 1000);
-    $('bonusStatus').textContent = seconds > 0 ? `Safra dourada: produção e clique 7× por ${seconds}s` : 'Clique no copo para preparar suco';
-    $('bonusStatus').classList.toggle('active', seconds > 0);
+    const seconds = boost ? Math.ceil((boost.until - Date.now()) / 1000) : 0;
+    const label = boost?.id === 'golden' ? 'Safra dourada' : boost?.id === 'rush' ? 'Hora do pedido' : 'Festival do caju';
+    $('bonusStatus').textContent = boost ? `${label}: produção ${boost.production}× e clique ${boost.click}× por ${seconds}s` : 'Clique no copo para preparar suco';
+    $('bonusStatus').classList.toggle('active', !!boost);
+    const pendingEvent = state.pendingEvent && state.pendingEvent.until > Date.now() ? C.EVENTS.find(e => e.id === state.pendingEvent.id) : null;
+    eventButton.hidden = !pendingEvent;
+    if (pendingEvent) {
+      eventButton.dataset.kind = pendingEvent.id;
+      $('eventIcon').textContent = pendingEvent.icon;
+      $('eventLabel').textContent = pendingEvent.name.toUpperCase();
+      eventButton.setAttribute('aria-label', `Coletar ${pendingEvent.name}`);
+    }
   }
   function floatText(text, event) {
     const area = $('juiceArea');
@@ -279,26 +300,29 @@
     setTimeout(() => element.remove(), 850);
   }
   $('juiceButton').addEventListener('click', event => {
-    const gain = C.clickPower(state, Date.now() < frenzyUntil);
+    if (!allowClick(performance.now())) return;
+    const gain = C.clickPower(state, currentBoost()?.click || 1);
     earn(gain); state.clicks++;
     floatText('+' + format(gain), event);
     checkAchievements(); render();
   });
-  golden.addEventListener('click', event => {
-    if (golden.hidden || Date.now() > goldenUntil) return;
-    golden.hidden = true;
-    goldenUntil = 0;
-    nextGolden = Date.now() + 65000 + Math.random() * 55000;
-    if (Math.random() < 0.55) {
-      frenzyUntil = Date.now() + 25000;
-      toast('Safra dourada: 7× por 25 segundos!');
-    } else {
-      const reward = Math.max(C.production(state) * 120, C.clickPower(state) * 77, 77);
-      earn(reward);
-      floatText('+' + format(reward), event);
-      toast('Caju dourado: +' + format(reward) + ' copos!');
-      checkAchievements();
-    }
+  document.querySelectorAll('[data-skin]').forEach(button => button.addEventListener('click', () => {
+    state.skin = button.dataset.skin;
+    render(); save();
+  }));
+  eventButton.addEventListener('click', event => {
+    const pending = state.pendingEvent;
+    if (!pending || pending.until <= Date.now()) return;
+    state.pendingEvent = null;
+    state.nextEventAt = Date.now() + nextEventDelay();
+    const reward = C.eventReward(state, pending.id, Math.random() < .45);
+    if (!reward) return;
+    if (reward.gain) { earn(reward.gain); floatText('+' + format(reward.gain), event); }
+    if (reward.boost) state.activeBoost = { id: reward.boost.id, production: reward.boost.production, click: reward.boost.click, until: Date.now() + reward.boost.duration };
+    state.eventStats.total++;
+    state.eventStats[pending.id]++;
+    checkAchievements();
+    toast(reward.gain ? `${reward.message} +${format(reward.gain)} copos` : reward.message);
     render(); save();
   });
   function showRanking(rows) {
@@ -390,8 +414,6 @@
     const gain = C.rebirth(state);
     dialog.close();
     if (!gain) return;
-    frenzyUntil = 0; golden.hidden = true; goldenUntil = 0;
-    nextGolden = Date.now() + 60000;
     checkAchievements(); lastUpgradeSignature = '';
     renderAchievements(); render(true); save();
     if (cloud.user) localStorage.setItem(pendingRewardKey(cloud.user.id), String(state.rebirths));
@@ -409,9 +431,19 @@
     const dt = Math.min(.25, Math.max(0, (now - lastFrame) / 1000));
     lastFrame = now;
     if (!document.hidden) {
-      earn(C.production(state, current < frenzyUntil) * dt);
-      if (current >= nextGolden && !goldenUntil) { goldenUntil = current + 12000; golden.hidden = false; }
-      if (goldenUntil && current > goldenUntil) { goldenUntil = 0; golden.hidden = true; nextGolden = current + 65000 + Math.random() * 55000; }
+      earn(C.production(state, currentBoost(current)?.production || 1) * dt);
+      if (state.activeBoost && state.activeBoost.until <= current) { state.activeBoost = null; save(); }
+      if (state.pendingEvent && state.pendingEvent.until <= current) {
+        state.pendingEvent = null;
+        state.nextEventAt = current + nextEventDelay();
+        save();
+      }
+      if (!state.pendingEvent && current >= state.nextEventAt) {
+        const roll = Math.random();
+        const selected = C.EVENTS[roll < .55 ? 0 : roll < .77 ? 1 : roll < .92 ? 2 : 3];
+        state.pendingEvent = { id: selected.id, until: current + selected.lifetime };
+        save();
+      }
       if (now - lastUi > 250) { lastUi = now; checkAchievements(); render(); }
     }
     requestAnimationFrame(frame);

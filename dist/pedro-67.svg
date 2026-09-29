@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 390" role="img" aria-labelledby="title">
+  <title id="title">Pedro Victor estilizado fazendo o gesto 6 7</title>
+  <defs>
+    <linearGradient id="shirt" x2="0" y2="1"><stop stop-color="#ffcf60"/><stop offset="1" stop-color="#e77f31"/></linearGradient>
+    <linearGradient id="skin" x2="0" y2="1"><stop stop-color="#c9824e"/><stop offset="1" stop-color="#a85a34"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="9" flood-color="#160b07" flood-opacity=".55"/></filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <ellipse cx="160" cy="354" rx="115" ry="19" fill="#341b0d" opacity=".35"/>
+    <path d="M77 346q-12-95 25-139 23-24 58-24t58 24q37 44 25 139Z" fill="url(#shirt)" stroke="#ffe3a0" stroke-width="6"/>
+    <path d="M92 222q-25 18-36 58l-20-13q5-58 44-84" fill="url(#skin)" stroke="#783e29" stroke-width="5"/>
+    <path d="M228 222q25 18 36 58l20-13q-5-58-44-84" fill="url(#skin)" stroke="#783e29" stroke-width="5"/>
+    <path d="M71 97q0-77 89-77t89 77v44q0 72-89 72t-89-72Z" fill="url(#skin)" stroke="#783e29" stroke-width="6"/>
+    <path d="M67 113Q58 14 155 13q85-1 102 78l-18 7q-24-9-35-33-24 24-82 25-27 1-55 23" fill="#302018" stroke="#20140e" stroke-width="5"/>
+    <path d="M113 127q11-7 22 0m50 0q11-7 22 0" fill="none" stroke="#4a261a" stroke-width="7" stroke-linecap="round"/>
+    <path d="M138 166q22 19 44 0" fill="none" stroke="#6a3025" stroke-width="7" stroke-linecap="round"/>
+    <path d="M102 237q58 38 116 0" fill="none" stroke="#ffdf96" stroke-width="7" opacity=".7"/>
+    <path d="M36 266q-13-13-12-35 2-16 16-11l5-38q4-12 13-6l2 32 11-34q7-11 15-3l-5 44 10-15q10-8 17 2l-24 46-16 31Z" fill="url(#skin)" stroke="#783e29" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M284 266q13-13 12-35-2-16-16-11l-5-38q-4-12-13-6l-2 32-11-34q-7-11-15-3l5 44-10-15q-10-8-17 2l24 46 16 31Z" fill="url(#skin)" stroke="#783e29" stroke-width="5" stroke-linejoin="round"/>
+    <circle cx="160" cy="291" r="37" fill="#733813" stroke="#ffe2a3" stroke-width="5"/>
+    <text x="160" y="306" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="900" font-size="38" fill="#ffe7ab">67</text>
+  </g>
+  <g font-family="system-ui,sans-serif" font-weight="900" font-size="32" text-anchor="middle">
+    <text x="34" y="166" fill="#ffe8a8" stroke="#7a3c16" stroke-width="5" paint-order="stroke">6</text>
+    <text x="286" y="166" fill="#ffe8a8" stroke="#7a3c16" stroke-width="5" paint-order="stroke">7</text>
+  </g>
+</svg>
