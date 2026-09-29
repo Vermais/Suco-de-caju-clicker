@@ -4,17 +4,16 @@
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
   const oldKey = 'suco-de-caju-clicker-v1';
-  const pendingRewardKey = 'suco-de-caju-clicker-pending-album-rebirth-v1';
-  const albumOrigin = 'https://album-pedro-victor.vercel.app';
-  const supabaseUrl = 'https://umayamlvxcdccmkpghmg.supabase.co';
-  const supabaseKey = 'sb_publishable_R5rN_XnQ7u_B-bv900ZY1g_K6V_wIIl';
+  const cloud = window.CajuCloud;
+  const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
+  const pendingRewardKey = id => 'suco-de-caju-clicker-pending-rebirth-' + id;
   const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
   const compact = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 2 });
   const format = value => !Number.isFinite(value) ? '∞' : value < 1000 ? Math.floor(value).toLocaleString('pt-BR') : compact.format(value);
   const precise = value => !Number.isFinite(value) ? '∞' : number.format(value);
   let raw = null;
   try { raw = JSON.parse(localStorage.getItem(saveKey) || localStorage.getItem(oldKey)); } catch (_) {}
-  const state = C.normalize(raw);
+  let state = C.normalize(raw);
   let buyMode = '1';
   let goldenUntil = 0;
   let frenzyUntil = 0;
@@ -23,7 +22,6 @@
   let lastUi = 0;
   let lastUpgradeSignature = null;
   let toastTimer;
-  let albumAccessToken = null;
   const buildingButtons = [];
   const buildingList = $('buildingList');
   const upgradeList = $('upgradeList');
@@ -32,7 +30,11 @@
 
   function save() {
     state.savedAt = Date.now();
-    try { localStorage.setItem(saveKey, JSON.stringify(state)); $('saveStatus').textContent = 'Salvo'; }
+    try {
+      localStorage.setItem(cloud.user ? userSaveKey(cloud.user.id) : saveKey, JSON.stringify(state));
+      if (cloud.user) cloud.queueSave(state);
+      else $('saveStatus').textContent = 'Progresso local';
+    }
     catch (_) { $('saveStatus').textContent = 'Sem espaço para salvar'; }
   }
   function toast(message) {
@@ -47,36 +49,71 @@
     status.textContent = message;
     status.style.color = connected ? '#8de1a8' : '';
   }
-  function requestAlbumConnection() {
-    if (window.parent !== window) window.parent.postMessage({ type: 'clicker-ready' }, albumOrigin);
-  }
   async function claimAlbumRebirth(rebirthCount) {
-    if (!albumAccessToken) throw new Error('Abra o clicker pelo álbum para receber os 10 🧃.');
-    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_clicker_rebirth`, {
-      method: 'POST',
-      headers: { apikey: supabaseKey, authorization: `Bearer ${albumAccessToken}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ p_rebirth_count: rebirthCount })
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      if (response.status === 401) { albumAccessToken = null; requestAlbumConnection(); }
-      throw new Error(payload.message || 'Não foi possível enviar a recompensa ao álbum.');
-    }
-    localStorage.removeItem(pendingRewardKey);
+    if (!cloud.user) throw new Error('Entre com sua conta do álbum para receber 10 🧃.');
+    const payload = await cloud.claimRebirth(rebirthCount);
+    localStorage.removeItem(pendingRewardKey(cloud.user.id));
     setAlbumStatus(`Conectado ao álbum · último renascimento: +${payload.reward || 0} 🧃`, true);
-    if (window.parent !== window) window.parent.postMessage({ type: 'clicker-reward', coins: payload.coins, reward: payload.reward }, albumOrigin);
     return payload;
   }
   async function syncPendingAlbumReward() {
-    const pending = Number(localStorage.getItem(pendingRewardKey) || 0);
-    if (!pending || !albumAccessToken) return null;
+    if (!cloud.user) return null;
+    const pending = Number(localStorage.getItem(pendingRewardKey(cloud.user.id)) || 0);
+    if (!pending) return null;
     return claimAlbumRebirth(pending);
   }
-  window.addEventListener('message', event => {
-    if (event.origin !== albumOrigin || event.data?.type !== 'album-auth') return;
-    albumAccessToken = typeof event.data.accessToken === 'string' ? event.data.accessToken : null;
-    setAlbumStatus(albumAccessToken ? 'Conectado ao Álbum Pedro Victor · cada renascimento vale +10 🧃' : 'Entre no álbum para receber recompensas.', Boolean(albumAccessToken));
-    if (albumAccessToken) syncPendingAlbumReward().catch(error => setAlbumStatus(error.message));
+  function addOfflineProgress() {
+    const elapsed = Math.min(4 * 3600, Math.max(0, (Date.now() - state.savedAt) / 1000));
+    const offline = Math.floor(C.production(state) * elapsed * .4);
+    if (offline) { earn(offline); toast('Enquanto você esteve fora: +' + format(offline) + ' copos'); save(); }
+  }
+  cloud.init({
+    authorized({ user, state: remote, newAccount, mode }) {
+      let cache = null;
+      try { cache = JSON.parse(localStorage.getItem(userSaveKey(user.id))); } catch (_) {}
+      // Uma partida já presente no banco sempre prevalece sobre o cache local.
+      let guest = null;
+      if (newAccount && mode === 'direct') {
+        try { guest = JSON.parse(localStorage.getItem(saveKey)); } catch (_) {}
+      }
+      state = C.normalize(remote || cache || guest);
+      addOfflineProgress();
+      lastUpgradeSignature = null;
+      renderAchievements(); checkAchievements(); render(true); save();
+      $('accountButton').textContent = mode === 'embedded' ? user.email || 'Conta do álbum' : (user.email || 'Minha conta') + ' · Sair';
+      $('accountButton').disabled = mode === 'embedded';
+      setAlbumStatus('Conectado ao Álbum Pedro Victor · cada renascimento vale +10 🧃', true);
+      syncPendingAlbumReward().catch(error => setAlbumStatus(error.message));
+    },
+    signedOut() {
+      let guest = null;
+      try { guest = JSON.parse(localStorage.getItem(saveKey)); } catch (_) {}
+      state = C.normalize(guest);
+      lastUpgradeSignature = null;
+      renderAchievements(); render(true);
+      $('accountButton').textContent = 'Entrar com a conta do álbum';
+      $('accountButton').disabled = false;
+      setAlbumStatus('Entre com a conta do álbum para receber recompensas.');
+    },
+    status(message) { $('saveStatus').textContent = message; }
+  });
+  const accountDialog = $('accountDialog');
+  $('accountButton').addEventListener('click', () => {
+    if (cloud.user) { cloud.logout(); return; }
+    $('accountError').textContent = '';
+    accountDialog.showModal();
+  });
+  $('cancelAccount').addEventListener('click', () => accountDialog.close());
+  $('accountForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    $('submitAccount').disabled = true;
+    $('accountError').textContent = '';
+    try {
+      await cloud.login($('accountEmail').value.trim(), $('accountPassword').value);
+      $('accountPassword').value = '';
+      accountDialog.close();
+    } catch (error) { $('accountError').textContent = error.message; }
+    finally { $('submitAccount').disabled = false; }
   });
   function earn(amount) {
     if (!Number.isFinite(amount) || amount <= 0) return;
@@ -265,7 +302,7 @@
     nextGolden = Date.now() + 60000;
     checkAchievements(); lastUpgradeSignature = '';
     renderAchievements(); render(true); save();
-    localStorage.setItem(pendingRewardKey, String(state.rebirths));
+    if (cloud.user) localStorage.setItem(pendingRewardKey(cloud.user.id), String(state.rebirths));
     try {
       const reward = await claimAlbumRebirth(state.rebirths);
       toast('Nova safra! +' + format(gain) + ' castanhas · +' + reward.reward + ' 🧃 no álbum');
@@ -274,9 +311,7 @@
     }
   });
 
-  const elapsed = Math.min(4 * 3600, Math.max(0, (Date.now() - state.savedAt) / 1000));
-  const offline = Math.floor(C.production(state) * elapsed * .4);
-  if (offline) { earn(offline); setTimeout(() => { toast('Enquanto você esteve fora: +' + format(offline) + ' copos'); checkAchievements(); render(); save(); }, 250); }
+  addOfflineProgress();
   function frame(now) {
     const current = Date.now();
     const dt = Math.min(.25, Math.max(0, (now - lastFrame) / 1000));
@@ -302,7 +337,5 @@
   });
   window.addEventListener('beforeunload', save);
   setInterval(() => { if (!document.hidden) save(); }, 5000);
-  requestAlbumConnection();
-  setInterval(requestAlbumConnection, 10 * 60 * 1000);
   renderAchievements(); checkAchievements(); render(); requestAnimationFrame(frame);
 })();

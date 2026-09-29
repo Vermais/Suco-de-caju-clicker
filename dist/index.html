@@ -9,12 +9,13 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23231509'/%3E%3Cpath d='M17 15h30l-4 36H21z' fill='%23f5a526'/%3E%3Cpath d='M20 19h24l-1 7H21z' fill='%23ffe194'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="./style.css">
   <script src="./game-core.js" defer></script>
+  <script src="./cloud.js" defer></script>
   <script src="./game.js" defer></script>
 </head>
 <body>
   <main class="game">
     <section class="play panel" aria-label="Produção de suco">
-      <header class="brand"><div><div class="brand-name">SUCO <span>DE CAJU</span></div><small>CLICKER · NOVA SAFRA</small></div><span id="saveStatus" class="save-status">Salvo</span></header>
+      <header class="brand"><div><div class="brand-name">SUCO <span>DE CAJU</span></div><small>CLICKER · NOVA SAFRA</small></div><div class="account-tools"><span id="saveStatus" class="save-status">Progresso local</span><button id="accountButton" class="account-button" type="button">Entrar com a conta do álbum</button></div></header>
       <div class="score" aria-live="polite"><strong id="juiceCount">0</strong><div>copos de suco de caju</div><p><b id="cps">0</b> copos por segundo</p></div>
       <div id="juiceArea" class="juice-area"><div class="halo"></div><button id="juiceButton" class="juice-button" aria-label="Preparar suco de caju"><img src="./caju.webp" alt="" draggable="false"></button><button id="golden" class="golden" aria-label="Caju dourado: bônus temporário" hidden>🌟<span>CAJU DOURADO</span></button></div>
       <p id="bonusStatus" class="tap-hint">Clique no copo para preparar suco</p>
@@ -30,10 +31,11 @@
       <section id="upgradesPanel" role="tabpanel" aria-labelledby="tabUpgrades"><div class="side-heading"><span class="eyebrow">EVOLUA SUA RECEITA</span><h2>Melhorias</h2><p>Novas receitas aparecem conforme você produz e constrói.</p></div><div id="upgradeList" class="upgrade-list"></div></section>
       <section id="achievementsPanel" role="tabpanel" aria-labelledby="tabAchievements" hidden><div class="side-heading"><span class="eyebrow">SUA TRAJETÓRIA</span><h2>Conquistas</h2><p>Conquistas ficam com você após cada renascimento e dão +0,5% de produção.</p><strong id="achievementCount"></strong></div><div id="achievementList" class="achievement-list"></div></section>
       <section id="prestigePanel" role="tabpanel" aria-labelledby="tabPrestige" hidden><div class="side-heading"><span class="eyebrow">COMECE DE NOVO, MAIS FORTE</span><h2>Nova safra</h2><p>Troque a produção desta safra por castanhas permanentes.</p></div><div class="prestige-card"><span class="prestige-icon">🌰</span><div><span>Castanhas acumuladas</span><strong id="prestigeTotal">0</strong></div></div><div class="prestige-details"><div><span>Bônus permanente</span><b id="prestigeBonus">+0%</b></div><div><span>Castanhas ao renascer agora</span><b id="prestigePending">0</b></div><div><span>Próxima castanha em</span><b id="nextPrestige">1 bi</b></div><div><span>Renascimentos</span><b id="rebirthCount">0</b></div></div><button id="rebirthButton" class="rebirth-button" disabled>Renascer</button><p class="reset-note">Renascer zera os copos, as construções e as melhorias. Castanhas, conquistas e o total histórico permanecem.</p></section>
-      <footer class="shop-footer"><div>Total histórico: <b id="allTime">0</b></div><div id="albumRewardStatus">Abra pelo Álbum Pedro Victor para receber recompensas.</div><div>Progresso salvo neste navegador · <a href="https://album-pedro-victor.vercel.app/#missions" target="_top">Voltar ao Álbum Pedro Victor</a></div></footer>
+      <footer class="shop-footer"><div>Total histórico: <b id="allTime">0</b></div><div id="albumRewardStatus">Entre com a conta do Álbum Pedro Victor para receber recompensas.</div><div>Use a mesma conta do álbum · <a href="https://album-pedro-victor.vercel.app/#album" target="_top">Voltar ao Álbum Pedro Victor</a></div></footer>
     </aside>
   </main>
   <dialog id="rebirthDialog"><div class="dialog-icon">🌰</div><h2>Começar uma nova safra?</h2><p>Você receberá <b id="dialogPending">0</b> castanhas. Os copos, as construções e as melhorias atuais serão reiniciados.</p><p><strong>Recompensa conectada: +10 🧃 no Álbum Pedro Victor.</strong></p><div class="dialog-actions"><button id="cancelRebirth" class="secondary">Continuar produzindo</button><button id="confirmRebirth" class="primary">Sim, renascer</button></div></dialog>
+  <dialog id="accountDialog"><h2>Conta do Álbum Pedro Victor</h2><p>Entre com o mesmo e-mail e senha do álbum para salvar sua partida no Supabase e continuar em outro dispositivo.</p><form id="accountForm"><label>E-mail<input id="accountEmail" type="email" autocomplete="email" required></label><label>Senha<input id="accountPassword" type="password" autocomplete="current-password" required></label><p id="accountError" class="account-error" role="alert"></p><div class="dialog-actions"><button id="cancelAccount" class="secondary" type="button">Cancelar</button><button id="submitAccount" class="primary" type="submit">Entrar</button></div></form><p class="account-hint">Ainda não tem conta? <a href="https://album-pedro-victor.vercel.app/#album" target="_blank" rel="noopener">Crie uma no álbum</a>.</p></dialog>
   <div id="toast" role="status" class="toast"></div>
 </body>
 </html>
