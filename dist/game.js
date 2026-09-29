@@ -3,21 +3,14 @@
   const C = window.CajuCore;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-29-8';
+  const gameVersion = '2026-09-29-9';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
   const pendingRewardKey = id => 'suco-de-caju-clicker-pending-rebirth-' + id;
-  const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
-  const compact = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
-  const magnitudes = [[1e33,'deci'],[1e30,'noni'],[1e27,'octi'],[1e24,'septi'],[1e21,'sexti'],[1e18,'quinti'],[1e15,'quadri'],[1e12,'tri'],[1e9,'bi'],[1e6,'mi'],[1e3,'mil']];
-  const format = value => {
-    if (!Number.isFinite(value)) return '∞';
-    if (value >= 1e36) return value.toExponential(2).replace('.', ',');
-    const unit = magnitudes.find(([size]) => value >= size);
-    return unit ? compact.format(value / unit[0]) + ' ' + unit[1] : Math.floor(value).toLocaleString('pt-BR');
-  };
-  const precise = value => !Number.isFinite(value) ? '∞' : number.format(value);
+  const format = window.CajuNumbers.format;
+  const precise = window.CajuNumbers.formatFraction;
+  const FX = window.CajuEffects;
   let raw = null;
   try { raw = JSON.parse(localStorage.getItem(saveKey) || localStorage.getItem(oldKey)); } catch (_) {}
   let state = C.normalize(raw);
@@ -167,7 +160,7 @@
         changed = true;
       }
     }
-    if (changed) { renderAchievements(); toast('Nova conquista desbloqueada!'); save(); }
+    if (changed) { renderAchievements(); FX.celebrate(document.querySelector('.play')); toast('Nova conquista desbloqueada!'); save(); }
   }
   C.BUILDINGS.forEach(b => {
     const button = document.createElement('button');
@@ -180,6 +173,8 @@
       if (state.juice + 1e-8 < cost) return;
       state.juice = Math.max(0, state.juice - cost);
       state.owned[b.id] += amount;
+      FX.animate(button, [{ transform: 'scale(.97)' }, { transform: 'scale(1.015)', borderColor: '#ffe2a1' }, { transform: 'scale(1)' }]);
+      FX.animate($('cps'), [{ color: '#fff6c9', transform: 'scale(1.1)' }, { transform: 'scale(1)' }]);
       checkAchievements(); render(true); save();
     });
     buildingList.append(button);
@@ -227,6 +222,7 @@
         if (state.upgrades.includes(u.id) || state.juice < u.cost || !C.upgradeUnlocked(u, state)) return;
         state.juice -= u.cost;
         state.upgrades.push(u.id);
+        FX.animate($('upgradeList'), [{ opacity: .6, transform: 'translateY(6px)' }, { opacity: 1, transform: 'translateY(0)' }]);
         toast(u.name + ' comprada!');
         render(true); save();
       });
@@ -251,6 +247,7 @@
     button.innerHTML = `<span class="upgrade-icon" aria-hidden="true">${u.icon}</span><span class="upgrade-main"><strong>${u.name}</strong><small>${u.description}</small><small class="permanent-level"></small></span><span class="upgrade-price"></span>`;
     button.addEventListener('click', () => {
       if (!C.buyPermanent(state, u.id)) return;
+      FX.animate(button, [{ backgroundColor: '#795322', transform: 'scale(1.02)' }, { transform: 'scale(1)' }], 500);
       toast(u.name + ': buff permanente comprado!');
       render(); save();
     });
@@ -275,7 +272,7 @@
     $('clickValue').textContent = format(C.clickPower(state, boost?.click || 1));
     $('runTotal').textContent = format(state.runProduced);
     $('allTime').textContent = format(state.allTime);
-    $('ownedTotal').textContent = state.owned.reduce((a,b) => a+b,0) + ' unidades';
+    $('ownedTotal').textContent = format(state.owned.reduce((a,b) => a+b,0)) + ' unidades';
     C.BUILDINGS.forEach((b, i) => {
       const button = buildingButtons[i];
       const amount = quantityFor(b);
@@ -283,8 +280,8 @@
       button.disabled = !amount || state.juice + 1e-8 < cost;
       button.classList.toggle('locked', !state.owned[i] && state.runProduced < b.base / 2);
       button.querySelector('.cost').textContent = amount ? format(cost) : '—';
-      button.querySelector('.owned').textContent = `${state.owned[i]} • ${buyMode === 'max' ? '+' + amount : '+' + buyMode}`;
-      button.title = `${b.name}: ${precise(b.cps)} copos/s por unidade. ${amount} por ${precise(cost)} copos.`;
+      button.querySelector('.owned').textContent = `${format(state.owned[i])} • +${format(buyMode === 'max' ? amount : Number(buyMode))}`;
+      button.title = `${b.name}: ${precise(b.cps)} copos/s por unidade. ${format(amount)} por ${precise(cost)} copos.`;
     });
     renderUpgrades();
     const pending = C.prestigePending(state);
@@ -292,7 +289,7 @@
     $('prestigeBonus').textContent = '+' + format(C.earnedNuts(state)) + '%';
     $('prestigePending').textContent = format(pending);
     $('nextPrestige').textContent = format(Math.max(0, C.prestigeCost(state, pending + 1) - state.runProduced));
-    $('rebirthCount').textContent = state.rebirths;
+    $('rebirthCount').textContent = format(state.rebirths);
     $('rebirthButton').disabled = pending < 1;
     $('rebirthButton').textContent = pending ? `Renascer e ganhar ${format(pending)} 🌰` : 'Renascer (ainda sem castanhas)';
     C.PERMANENT_UPGRADES.forEach((u, i) => {
@@ -325,6 +322,7 @@
     const y = event?.clientY ? event.clientY - box.top : box.height / 2;
     element.style.left = Math.max(8, Math.min(box.width - 85, x)) + 'px';
     element.style.top = Math.max(15, Math.min(box.height - 35, y)) + 'px';
+    if (area.querySelectorAll('.float').length >= 16) area.querySelector('.float').remove();
     area.append(element);
     setTimeout(() => element.remove(), 850);
   }
@@ -332,10 +330,12 @@
     const gain = C.clickPower(state, currentBoost()?.click || 1);
     earn(gain); state.clicks++;
     floatText('+' + format(gain), event);
+    FX.click($('juiceButton'), $('juiceArea'), event);
     checkAchievements(); render();
   });
   document.querySelectorAll('[data-skin]').forEach(button => button.addEventListener('click', () => {
     state.skin = button.dataset.skin;
+    FX.animate($('juiceButton'), [{ opacity: .2, transform: 'scale(.85)' }, { opacity: 1, transform: 'scale(1)' }], 450);
     render(); save();
   }));
   eventButton.addEventListener('click', event => {
@@ -345,6 +345,8 @@
     state.nextEventAt = Date.now() + nextEventDelay();
     const reward = C.eventReward(state, pending.id, Math.random() < .45);
     if (!reward) return;
+    FX.burst($('juiceArea'), event, 18, true);
+    FX.animate($('juiceCount'), [{ transform: 'scale(1.12)', color: '#ffd46c' }, { transform: 'scale(1)' }], 450);
     if (reward.gain) { earn(reward.gain); floatText('+' + format(reward.gain), event); }
     if (reward.boost) state.activeBoost = { id: reward.boost.id, production: reward.boost.production, click: reward.boost.click, until: Date.now() + reward.boost.duration };
     state.eventStats.total++;
@@ -381,7 +383,7 @@
       const main = document.createElement('b');
       main.textContent = rankingSort === 'rebirths' ? precise(Number(row.rebirth_count)) + ' 🌰' : format(Number(row.caju_total)) + ' 🧃';
       const secondary = document.createElement('small');
-      secondary.textContent = rankingSort === 'rebirths' ? format(Number(row.caju_total)) + ' copos' : row.rebirth_count + ' renasc.';
+      secondary.textContent = rankingSort === 'rebirths' ? format(Number(row.caju_total)) + ' copos' : format(Number(row.rebirth_count)) + ' renasc.';
       score.append(main, secondary);
       item.append(place, player, score);
       list.append(item);
@@ -428,6 +430,7 @@
       $('tab' + tab).setAttribute('aria-selected', String(active));
       $(tab.toLowerCase() + 'Panel').hidden = !active;
     }
+    FX.animate($(name.toLowerCase() + 'Panel'), [{ opacity: .4, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }], 220);
     if (name === 'Leaderboard') loadRanking();
   }
   ['Upgrades','Achievements','Prestige','Leaderboard'].forEach(name => $('tab' + name).addEventListener('click', () => setTab(name)));
@@ -442,6 +445,8 @@
     const gain = C.rebirth(state);
     dialog.close();
     if (!gain) return;
+    FX.celebrate(document.querySelector('.play'));
+    FX.animate($('prestigeTotal'), [{ transform: 'scale(1.3)', color: '#fff2ad' }, { transform: 'scale(1)' }], 650);
     checkAchievements(); lastUpgradeSignature = '';
     renderAchievements(); render(true); save();
     if (cloud.user) localStorage.setItem(pendingRewardKey(cloud.user.id), String(state.rebirths));

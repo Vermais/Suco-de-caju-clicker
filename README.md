@@ -24,6 +24,8 @@ Salvamentos anteriores preservam saldo, produtores, melhorias, níveis e castanh
 
 ## Verificar
 
-Execute `node tests/game-core.test.js`, `node tests/cloud-sync.test.js` e `node --check dist/game.js`.
+Execute `node tests/game-core.test.js`, `node tests/cloud-sync.test.js`, `node tests/numbers.test.js` e `node --check dist/game.js`.
 
-A interface tem rolagem independente para produtores e loja. Números grandes usam unidades até decilhão e depois notação científica. Conflitos de revisão recarregam o salvamento remoto, sem reenviar um cache antigo após um reset administrativo.
+A interface tem rolagem independente para produtores e loja. Todos os números dinâmicos são abreviados a partir de 1.000, inclusive produção por segundo, quantidades e ranking. A notação segue até vigintilhão e depois usa notação científica. Produções menores que 1.000 preservam duas casas decimais. Conflitos de revisão recarregam o salvamento remoto, sem reenviar um cache antigo após um reset administrativo.
+
+Cliques têm partículas e movimento do copo; compras, eventos, conquistas e renascimentos têm feedback animado. Prefers-reduced-motion desativa os efeitos. O número de partículas simultâneas é limitado apenas para desempenho visual, sem limitar os cliques ou ganhos.
