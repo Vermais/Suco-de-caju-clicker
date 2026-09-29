@@ -114,7 +114,19 @@
       if (session?.user?.id !== userId) return false;
       if (error.code === '40001') {
         conflict = true;
-        status('Partida alterada em outra aba. Recarregue para ver a versão mais recente.');
+        queued = null;
+        try {
+          const rows = await request('/rest/v1/clicker_progress?user_id=eq.' + encodeURIComponent(userId) + '&select=state,revision&limit=1');
+          if (session?.user?.id !== userId) return false;
+          const row = rows?.[0];
+          if (!row) throw new Error('Partida não encontrada');
+          revision = Number(row.revision);
+          conflict = false;
+          listeners.authorized({ user: session.user, state: row.state, newAccount: false, mode: session.mode });
+          status('Partida atualizada com o salvamento da sua conta');
+        } catch (_) {
+          status('Partida alterada. Recarregue para receber o salvamento mais recente.');
+        }
       } else {
         queued = queued || snapshot;
         status('Sem conexão com o banco. Progresso salvo neste navegador.');

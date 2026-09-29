@@ -18,10 +18,12 @@ O prestígio usa produção acumulada, como o Cookie Clicker: comprar máquinas 
 
 Cada castanha conquistada dá +1% de bônus, mesmo depois de gastar. A loja agora tem 12 buffs, com preços que dobram por nível: produção, clique, kit inicial, produção ausente, eventos, equipe inicial, sinergia entre produtores, conquistas, fração de produção por clique, frequência de eventos, janela de coleta e limite de horas ausentes. O pacote inicial de produção, kit, clique e produção ausente custa as 5 primeiras castanhas. A equipe inicial só é entregue no próximo renascimento, assim como o kit.
 
-São 18 produtores (4 novos), com 11 patamares de melhorias individuais e sinergias entre produtores vizinhos, além de novas melhorias globais e de clique. As melhorias de 100 e 200 unidades ficaram mais acessíveis.
+São 18 produtores (4 novos), com 15 patamares de melhorias individuais e sinergias entre produtores vizinhos, além de novas melhorias globais e de clique. Os preços de melhorias individuais seguem patamares progressivos inspirados no Cookie Clicker, com bônus de produção ×2. Melhorias de clique multiplicam por ×2, globais acrescentam entre 5% e 25%, e a linha Aroma aumenta a produção com as conquistas (4% de aroma por conquista). O prestígio aumenta a produção automática em 1% por castanha conquistada; cliques recebem a fração da produção prevista pelas melhorias.
 
 Salvamentos anteriores preservam saldo, produtores, melhorias, níveis e castanhas. `prestigeBase` migra os níveis já conquistados para uma base compatível com a nova curva e soma a produção da safra atual. Depois de cada rebirth, essa base inclui a produção contabilizada; normalizações posteriores não a recalculam. Os dados adicionais continuam no JSON de salvamento existente, sem alteração de esquema.
 
 ## Verificar
 
-Execute `node tests/game-core.test.js` e `node --check dist/game.js`.
+Execute `node tests/game-core.test.js`, `node tests/cloud-sync.test.js` e `node --check dist/game.js`.
+
+A interface tem rolagem independente para produtores e loja. Números grandes usam unidades até decilhão e depois notação científica. Conflitos de revisão recarregam o salvamento remoto, sem reenviar um cache antigo após um reset administrativo.

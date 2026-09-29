@@ -3,14 +3,20 @@
   const C = window.CajuCore;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-29-7';
+  const gameVersion = '2026-09-29-8';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
   const pendingRewardKey = id => 'suco-de-caju-clicker-pending-rebirth-' + id;
   const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
-  const compact = new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 2 });
-  const format = value => !Number.isFinite(value) ? '∞' : value < 1000 ? Math.floor(value).toLocaleString('pt-BR') : compact.format(value);
+  const compact = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
+  const magnitudes = [[1e33,'deci'],[1e30,'noni'],[1e27,'octi'],[1e24,'septi'],[1e21,'sexti'],[1e18,'quinti'],[1e15,'quadri'],[1e12,'tri'],[1e9,'bi'],[1e6,'mi'],[1e3,'mil']];
+  const format = value => {
+    if (!Number.isFinite(value)) return '∞';
+    if (value >= 1e36) return value.toExponential(2).replace('.', ',');
+    const unit = magnitudes.find(([size]) => value >= size);
+    return unit ? compact.format(value / unit[0]) + ' ' + unit[1] : Math.floor(value).toLocaleString('pt-BR');
+  };
   const precise = value => !Number.isFinite(value) ? '∞' : number.format(value);
   let raw = null;
   try { raw = JSON.parse(localStorage.getItem(saveKey) || localStorage.getItem(oldKey)); } catch (_) {}
@@ -91,6 +97,7 @@
   }
   cloud.init({
     authorized({ user, state: remote, newAccount, mode }) {
+      if (remote && !remote.rebirths) localStorage.removeItem(pendingRewardKey(user.id));
       let cache = null;
       try { cache = JSON.parse(localStorage.getItem(userSaveKey(user.id))); } catch (_) {}
       // Uma partida já presente no banco sempre prevalece sobre o cache local.

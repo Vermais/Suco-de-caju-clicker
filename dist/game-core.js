@@ -24,31 +24,31 @@
   const UPGRADES = [
     { id: 'click1', name: 'Copo resistente', icon: '🥛', description: 'Cliques produzem 2×.', cost: 100, unlock: 50, click: 2 },
     { id: 'click2', name: 'Caju escolhido', icon: '🍊', description: 'Cliques produzem 2×.', cost: 1000, unlock: 500, click: 2 },
-    { id: 'click3', name: 'Receita da casa', icon: '📜', description: 'Cliques produzem 3×.', cost: 15000, unlock: 7500, click: 3 },
-    { id: 'click4', name: 'Prensa dourada', icon: '✨', description: 'Cliques produzem 3×.', cost: 250000, unlock: 125000, click: 3 },
-    { id: 'click5', name: 'Mestre do suco', icon: '🏆', description: 'Cliques produzem 5×.', cost: 10000000, unlock: 5000000, click: 5 },
+    { id: 'click3', name: 'Receita da casa', icon: '📜', description: 'Cliques produzem 2×.', cost: 15000, unlock: 7500, click: 2 },
+    { id: 'click4', name: 'Prensa dourada', icon: '✨', description: 'Cliques produzem 2×.', cost: 250000, unlock: 125000, click: 2 },
+    { id: 'click5', name: 'Mestre do suco', icon: '🏆', description: 'Cliques produzem 2×.', cost: 10000000, unlock: 5000000, click: 2 },
     { id: 'click6', name: 'Prensa turbo', icon: '⚙️', description: 'Cliques produzem 2×.', cost: 100000000, unlock: 50000000, click: 2 },
-    { id: 'click7', name: 'Toque de mestre', icon: '🤏', description: 'Cliques produzem 3×.', cost: 50000000000, unlock: 25000000000, click: 3 },
-    { id: 'click8', name: 'Lenda do pomar', icon: '🌠', description: 'Cliques produzem 3×.', cost: 500000000000000, unlock: 250000000000000, click: 3 },
-    { id: 'global1', name: 'Colheita cuidadosa', icon: '🧺', description: 'Toda a produção automática +25%.', cost: 5000, unlock: 2500, global: 1.25 },
-    { id: 'global2', name: 'Distribuição rápida', icon: '⚡', description: 'Toda a produção automática +50%.', cost: 1000000, unlock: 500000, global: 1.5 },
-    { id: 'global3', name: 'Safra especial', icon: '🌟', description: 'Toda a produção automática 2×.', cost: 100000000, unlock: 50000000, global: 2 },
-    { id: 'global4', name: 'Caju infinito', icon: '♾️', description: 'Toda a produção automática 2×.', cost: 10000000000, unlock: 5000000000, global: 2 }
+    { id: 'click7', name: 'Toque de mestre', icon: '🤏', description: 'Cliques produzem 2×.', cost: 50000000000, unlock: 25000000000, click: 2 },
+    { id: 'click8', name: 'Lenda do pomar', icon: '🌠', description: 'Cliques produzem 2×.', cost: 500000000000000, unlock: 250000000000000, click: 2 },
+    { id: 'global1', name: 'Colheita cuidadosa', icon: '🧺', description: 'Toda a produção automática +5%.', cost: 5000, unlock: 2500, global: 1.05 },
+    { id: 'global2', name: 'Distribuição rápida', icon: '⚡', description: 'Toda a produção automática +10%.', cost: 1000000, unlock: 500000, global: 1.1 },
+    { id: 'global3', name: 'Safra especial', icon: '🌟', description: 'Toda a produção automática +15%.', cost: 100000000, unlock: 50000000, global: 1.15 },
+    { id: 'global4', name: 'Caju infinito', icon: '♾️', description: 'Toda a produção automática +20%.', cost: 10000000000, unlock: 5000000000, global: 1.2 }
   ];
   UPGRADES.push(
-    { id: 'global5', name: 'Cooperativa do caju', icon: '🤝', description: 'Toda a produção automática +30%.', cost: 120000, unlock: 60000, global: 1.3 },
-    { id: 'global6', name: 'Ferrovias da safra', icon: '🚂', description: 'Toda a produção automática +60%.', cost: 120000000000, unlock: 60000000000, global: 1.6 },
-    { id: 'global7', name: 'Comércio interplanetário', icon: '🪐', description: 'Toda a produção automática 2×.', cost: 200000000000000, unlock: 100000000000000, global: 2 },
-    { id: 'global8', name: 'Universo do caju', icon: '🌌', description: 'Toda a produção automática 2×.', cost: 3000000000000000000, unlock: 1500000000000000000, global: 2 },
-    { id: 'global9', name: 'Rede de pomares', icon: '🕸️', description: 'Toda a produção automática +75%.', cost: 30000000000000, unlock: 15000000000000, global: 1.75 },
-    { id: 'global10', name: 'Receita multidimensional', icon: '🌀', description: 'Toda a produção automática 2×.', cost: 60000000000000000, unlock: 30000000000000000, global: 2 },
-    { id: 'click9', name: 'Mãos do multiverso', icon: '🙌', description: 'Cliques produzem 3×.', cost: 20000000000000000, unlock: 10000000000000000, click: 3 }
+    { id: 'global5', name: 'Cooperativa do caju', icon: '🤝', description: 'Toda a produção automática +5%.', cost: 120000, unlock: 60000, global: 1.05 },
+    { id: 'global6', name: 'Ferrovias da safra', icon: '🚂', description: 'Toda a produção automática +10%.', cost: 120000000000, unlock: 60000000000, global: 1.1 },
+    { id: 'global7', name: 'Comércio interplanetário', icon: '🪐', description: 'Toda a produção automática +15%.', cost: 200000000000000, unlock: 100000000000000, global: 1.15 },
+    { id: 'global8', name: 'Universo do caju', icon: '🌌', description: 'Toda a produção automática +25%.', cost: 3000000000000000000, unlock: 1500000000000000000, global: 1.25 },
+    { id: 'global9', name: 'Rede de pomares', icon: '🕸️', description: 'Toda a produção automática +10%.', cost: 30000000000000, unlock: 15000000000000, global: 1.1 },
+    { id: 'global10', name: 'Receita multidimensional', icon: '🌀', description: 'Toda a produção automática +20%.', cost: 60000000000000000, unlock: 30000000000000000, global: 1.2 },
+    { id: 'click9', name: 'Mãos do multiverso', icon: '🙌', description: 'Cliques produzem 2×.', cost: 20000000000000000, unlock: 10000000000000000, click: 2 }
   );
   const BUILDING_TIERS = [
-    [5, 8, 'primeiros passos'], [10, 15, 'prática'], [25, 90, 'especialização'],
-    [50, 500, 'excelência'], [75, 2500, 'engenharia'], [100, 10000, 'maestria'],
-    [150, 2000000, 'automação avançada'], [200, 1000000000, 'lenda'],
-    [300, 1e15, 'transcendência'], [400, 1e21, 'eternidade'], [500, 1e27, 'origem']
+    [1, 10, 'primeiro equipamento'], [5, 50, 'primeiros passos'], [10, 200, 'prática'], [25, 500, 'especialização'],
+    [50, 5000, 'excelência'], [75, 20000, 'engenharia'], [100, 50000, 'maestria'],
+    [150, 5e6, 'automação avançada'], [200, 5e8, 'lenda'], [250, 5e10, 'evolução'],
+    [300, 5e12, 'transcendência'], [350, 5e14, 'horizonte'], [400, 5e16, 'eternidade'], [450, 5e18, 'infinito'], [500, 5e20, 'origem']
   ];
   BUILDINGS.forEach(b => BUILDING_TIERS.forEach(([count, factor, title]) => {
     UPGRADES.push({ id: `b${b.id}-${count}`, name: `${b.name}: ${title}`, icon: b.icon,
@@ -56,14 +56,18 @@
       building: b.id, count, buildingMult: 2 });
   }));
   UPGRADES.push(
-    ...[[2e7, 1.3, 'Controle de qualidade'], [2e9, 1.5, 'Logística inteligente'],
-      [2e12, 1.5, 'Rede estelar'], [2e16, 1.5, 'Safra temporal'],
-      [2e19, 2, 'Energia primordial'], [2e22, 2, 'Horizonte infinito']].map(([cost, global, name], i) =>
+    ...[[2e7, 1.1, 'Controle de qualidade'], [2e9, 1.1, 'Logística inteligente'],
+      [2e12, 1.15, 'Rede estelar'], [2e16, 1.15, 'Safra temporal'],
+      [2e19, 1.2, 'Energia primordial'], [2e22, 1.25, 'Horizonte infinito']].map(([cost, global, name], i) =>
       ({ id: `expansion-global-${i}`, name, icon: '📈', description: `Produção automática ×${global.toLocaleString('pt-BR')}.`, cost, unlock: cost / 2, global })),
     ...[[2e6, .005, 'Gole produtivo'], [2e8, .005, 'Prensa sincronizada'], [2e11, .01, 'Fluxo industrial'],
       [2e14, .01, 'Pulso cósmico'], [2e18, .02, 'Toque temporal']].map(([cost, clickCps, name], i) =>
       ({ id: `expansion-click-${i}`, name, icon: '👆', description: `Cada clique recebe mais ${clickCps * 100}% da produção por segundo.`, cost, unlock: cost / 2, clickCps }))
   );
+  UPGRADES.push(...[[9e6, .1, 10], [9e9, .125, 20], [9e12, .15, 30], [9e15, .175, 40], [9e18, .2, 50]].map(([cost, milk, achievementCount], i) => ({
+    id: `aroma-${i}`, name: ['Aroma da safra', 'Aroma refinado', 'Essência do pomar', 'Essência estelar', 'Essência eterna'][i], icon: '🍃',
+    description: `Produção aumenta com as conquistas: fator de aroma ${milk.toLocaleString('pt-BR')}.`, cost, unlock: cost / 2, milk, achievementCount
+  })));
   BUILDINGS.slice(1).forEach(b => UPGRADES.push({ id: `synergy-${b.id}`, name: `${b.name}: cadeia integrada`, icon: '🤝',
     description: `Cada ${BUILDINGS[b.id - 1].name.toLowerCase()} aumenta a produção de ${b.name.toLowerCase()} em 1%.`,
     cost: b.base * 100, building: b.id, count: 15, synergy: b.id - 1 }));
@@ -161,7 +165,7 @@
     state.permanentUpgrades[id] = permanentLevel(state, id) + 1;
     return true;
   }
-  const upgradeUnlocked = (u, state) => u.building === undefined ? state.runProduced >= u.unlock : state.owned[u.building] >= u.count;
+  const upgradeUnlocked = (u, state) => u.building === undefined ? state.runProduced >= u.unlock && state.achievements.length >= (u.achievementCount || 0) : state.owned[u.building] >= u.count;
   const boostMultiplier = timed => timed === true ? 7 : Number.isFinite(timed) && timed > 0 ? timed : 1;
   function production(state, timed = false) {
     let cps = BUILDINGS.reduce((sum, b) => {
@@ -170,17 +174,18 @@
       return sum + state.owned[b.id] * b.cps * power * (synergy ? 1 + state.owned[synergy.synergy] * .01 : 1);
     }, 0);
     cps *= UPGRADES.reduce((m, u) => m * (u.global && state.upgrades.includes(u.id) ? u.global : 1), 1);
+    const aroma = state.achievements.length * .04 * (1 + permanentLevel(state, 'milk') * .2);
+    cps *= UPGRADES.reduce((m, u) => m * (u.milk && state.upgrades.includes(u.id) ? 1 + aroma * u.milk : 1), 1);
     cps *= legacyBonus(state) * 1.5 ** permanentLevel(state, 'production');
     cps *= 1 + state.owned.filter(count => count > 0).length * .02 * permanentLevel(state, 'synergy');
     return cps * boostMultiplier(timed);
   }
   function clickPower(state, timed = false) {
     const base = UPGRADES.reduce((m, u) => m * (u.click && state.upgrades.includes(u.id) ? u.click : 1), 1);
-    const permanent = legacyBonus(state);
     const clickLevel = permanentLevel(state, 'click');
     const clickBuff = clickLevel ? 2 * 1.5 ** (clickLevel - 1) : 1;
     const fraction = .01 + .005 * permanentLevel(state, 'clickCps') + UPGRADES.reduce((sum, u) => sum + (state.upgrades.includes(u.id) ? u.clickCps || 0 : 0), 0);
-    return Math.max(1, Math.floor((base + production(state, false) / permanent * fraction) * permanent * clickBuff * boostMultiplier(timed)));
+    return Math.max(1, Math.floor((base + production(state, false) * fraction) * clickBuff * boostMultiplier(timed)));
   }
   function baseEventReward(state, id, lucky = false) {
     if (id === 'golden') return lucky

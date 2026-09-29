@@ -251,3 +251,26 @@ test('novos produtores têm custos e produção crescentes, melhorias e sinergia
   state.upgrades.push(click.id);
   assert.ok(C.clickPower(state) > power);
 });
+
+
+test('economia usa 15% por produtor, dobro por melhoria e aroma proporcional às conquistas', () => {
+  const b = C.BUILDINGS[2];
+  assert.equal(C.price(b, 1), Math.ceil(b.base * 1.15));
+  for (const u of C.UPGRADES.filter(u => u.click)) assert.equal(u.click, 2);
+  for (const u of C.UPGRADES.filter(u => u.global)) assert.ok(u.global <= 1.25 && u.global > 1);
+  const tier = C.UPGRADES.find(u => u.id === 'b2-100');
+  assert.equal(tier.cost, b.base * 50000);
+  const state = C.newState();
+  state.owned[2] = 100;
+  const before = C.production(state);
+  state.upgrades.push(tier.id);
+  assert.equal(C.production(state), before * 2);
+  const aroma = C.UPGRADES.find(u => u.id === 'aroma-0');
+  state.runProduced = 9e6;
+  assert.equal(C.upgradeUnlocked(aroma, state), false);
+  state.achievements = C.ACHIEVEMENTS.slice(0,10).map(a=>a.id);
+  assert.equal(C.upgradeUnlocked(aroma, state), true);
+  const noAroma = C.production(state);
+  state.upgrades.push(aroma.id);
+  assert.ok(Math.abs(C.production(state) / noAroma - 1.04) < 1e-10);
+});
