@@ -95,3 +95,7 @@ Rajadas usam um ciclo visual estável de 360–420 ms, com transição curta ent
 6/7 aparecem sobre a mão que sobe, flutuam e somem em 650 ms; no máximo seis elementos, com novas emissões ligadas à fase visual em rajadas. Aura funciona em todas as skins. Cada clique contribui até 1,5 pontos, usando o tempo real entre cliques (máximo 5 pontos/s, sem acumular crédito durante pausas longas). 100 pontos ativam produção e clique completos 2× por 20 segundos, seguidos por 20 segundos de recarga sem carga. Não limita saldo nem cliques. Carga parcial e prazos fazem parte do JSON de progresso existente; refresh mantém os prazos absolutos, rebirth limpa a aura, não há aura offline.
 
 Pesquisa: a página cookie-clicker2.com descreve bônus temporários por cookies dourados; a barra pedida não foi confirmada ali. A aura aqui é uma adaptação balanceada própria.
+
+## Aura visual e easter egg 67 — versão 2026-09-30-11
+
+Boost da aura cria contorno pulsante, órbita dourada/violeta e brilho ao redor de qualquer skin equipada até expirar. Números visíveis iguais a 67 (incluindo percentuais, unidades abreviadas, preços, ranking, contadores e campos) acionam um Pedro animado acima do texto por 3 segundos. Observador de DOM agrupa mudanças por frame e não reinicia o popup se o mesmo número permanecer 67. Considera o número exibido; 167 e 67,1 não disparam, 67 e 67,00 disparam. Não altera ganhos, saves ou balanceamento.

@@ -4,7 +4,7 @@
   const S = window.CajuStickers;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-30-10';
+  const gameVersion = '2026-09-30-11';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -160,6 +160,7 @@
     $('auraFill').style.width = aura.percent.toFixed(1) + '%';
     $('auraMeter').setAttribute('aria-valuenow', String(Math.round(aura.percent)));
     $('auraPanel').classList.toggle('aura-active', aura.active);
+    $('juiceButton').classList.toggle('aura-empowered', aura.active);
     $('auraLabel').textContent = aura.active ? '2× · ' + aura.seconds + 's' : aura.cooling ? 'Recarga · ' + aura.seconds + 's' : Math.floor(aura.percent) + '%';
     const status = aura.active ? 'Produção e cliques em dobro!' : aura.cooling ? 'A aura volta a carregar após a recarga.' : 'Clique para carregar · 2× por 20s';
     if ($('auraStatus').textContent !== status) $('auraStatus').textContent = status;
@@ -744,5 +745,7 @@
   setInterval(() => { if (!document.hidden) save(); }, 5000);
   setInterval(checkForUpdate, 45000);
   setTimeout(checkForUpdate, 12000);
-  renderAchievements(); checkAchievements(); render(); requestAnimationFrame(frame);
+  renderAchievements(); checkAchievements(); render();
+  window.CajuSixtySeven.start();
+  requestAnimationFrame(frame);
 })();
