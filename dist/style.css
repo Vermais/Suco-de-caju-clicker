@@ -69,3 +69,15 @@ dialog[open]{animation:dialogIn .24s ease-out}
 
 /* As mãos do Pedro alternam apenas em resposta a cada clique. */
 .juice-button.pedro-skin img{animation:none;width:min(100%,330px);height:100%;object-fit:contain}
+
+/* Duas poses já decodificadas, animadas no compositor em rajadas rápidas. */
+.pedro-frames{display:none;position:absolute;inset:0;pointer-events:none}
+.juice-button.pedro-moving #skinImage{visibility:hidden}
+.juice-button.pedro-skin.pedro-moving .pedro-frames{display:block}
+.juice-button.pedro-skin .pedro-frames img{position:absolute;inset:0;margin:auto;will-change:opacity;animation-duration:240ms;animation-timing-function:steps(1,end);animation-iteration-count:infinite}
+.juice-button.pedro-skin.pedro-moving .pedro-frame-left{animation-name:pedroLeft}
+.juice-button.pedro-skin.pedro-moving .pedro-frame-right{animation-name:pedroRight}
+.juice-button.pedro-moving[data-pedro-start="7"] .pedro-frames img{animation-delay:-120ms}
+@keyframes pedroLeft{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes pedroRight{0%,100%{opacity:0}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.juice-button.pedro-moving #skinImage{visibility:visible}.juice-button.pedro-skin.pedro-moving .pedro-frames{display:none}}

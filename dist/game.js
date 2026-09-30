@@ -4,7 +4,7 @@
   const S = window.CajuStickers;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-30-7';
+  const gameVersion = '2026-09-30-8';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -124,7 +124,21 @@
     }
   }
   let buyMode = '1';
-  let pedroLeftHand = false;
+  const pedroMotion = window.CajuHandMotion.create();
+  let clickUiDirty = false;
+  let lastClickUi = -Infinity;
+  function renderHands(now = performance.now()) {
+    const motion = pedroMotion.view(now);
+    const button = $('juiceButton');
+    if (state.skin === 'pedro67' && !motion.moving) {
+      const source = motion.left ? './pedro-67-left.webp' : './pedro-67-right.webp';
+      if ($('skinImage').getAttribute('src') !== source) $('skinImage').setAttribute('src', source);
+    }
+    button.classList.toggle('pedro-moving', state.skin === 'pedro67' && motion.moving);
+    button.dataset.pedroStart = motion.initialLeft ? '6' : '7';
+    button.dataset.pedroPose = state.skin === 'pedro67' ? (motion.left ? '6' : '7') : '';
+    return motion;
+  }
   let lastFrame = performance.now();
   let lastUi = 0;
   let lastUpgradeSignature = null;
@@ -409,13 +423,13 @@
     const selectedSticker = S.cardForSkin(state.skin);
     const sticker = cloud.user?.id === stickerUser && selectedSticker && S.hasOwned(stickerOwned, selectedSticker.id) ? selectedSticker : null;
     const pedroSkin = state.skin === 'pedro67';
+    const handMotion = renderHands();
     $('openStickers').disabled = !cloud.user;
     $('openStickers').classList.toggle('selected', !!sticker);
     const skinImage = $('skinImage');
-    const skinSource = sticker ? sticker.image : pedroSkin ? (pedroLeftHand ? './pedro-67-left.webp' : './pedro-67-right.webp') : './caju.webp';
+    const skinSource = sticker ? sticker.image : pedroSkin ? (handMotion.left ? './pedro-67-left.webp' : './pedro-67-right.webp') : './caju.webp';
     if (skinImage.getAttribute('src') !== skinSource) skinImage.setAttribute('src', skinSource);
     $('juiceButton').classList.toggle('pedro-skin', pedroSkin);
-    $('juiceButton').dataset.pedroPose = pedroSkin ? (pedroLeftHand ? '6' : '7') : '';
     $('juiceButton').classList.toggle('sticker-skin', !!sticker);
     $('juiceButton').setAttribute('aria-label', sticker ? sticker.name + ': preparar suco de caju' : pedroSkin ? 'Pedro Victor fazendo 6 7: preparar suco de caju' : 'Preparar suco de caju');
     document.querySelectorAll('[data-skin]').forEach(button => {
@@ -486,17 +500,24 @@
     setTimeout(() => element.remove(), 850);
   }
   $('juiceButton').addEventListener('click', event => {
-    if (state.skin === 'pedro67') pedroLeftHand = !pedroLeftHand;
+    const now = performance.now();
+    if (state.skin === 'pedro67') { pedroMotion.click(now); renderHands(now); }
     const boost = currentBoost();
     const gain = C.clickPower(state, boost?.click || 1, productionMultiplier());
     earn(gain); state.clicks++; state.handmade += gain;
-    floatText('+' + format(gain), event);
-    FX.click($('juiceButton'), $('juiceArea'), event);
-    checkAchievements(); render();
+    // Só a apresentação é agrupada; saldo e contadores recebem TODOS os cliques.
+    clickUiDirty = true;
+    if (now - lastClickUi >= 50) {
+      lastClickUi = now;
+      floatText('+' + format(gain), event);
+      if (state.skin !== 'pedro67') FX.click($('juiceButton'), $('juiceArea'), event);
+      else FX.burst($('juiceArea'), event);
+      checkAchievements(); render(); clickUiDirty = false;
+    }
   });
   document.querySelectorAll('[data-skin]').forEach(button => button.addEventListener('click', () => {
     state.skin = button.dataset.skin;
-    pedroLeftHand = false;
+    pedroMotion.reset();
     FX.animate($('juiceButton'), [{ opacity: .2, transform: 'scale(.85)' }, { opacity: 1, transform: 'scale(1)' }], 450);
     render(); save();
   }));
@@ -641,6 +662,7 @@
     const current = Date.now();
     const dt = Math.min(.25, Math.max(0, (now - lastFrame) / 1000));
     lastFrame = now;
+    renderHands(now);
     if (!document.hidden) {
       earn(C.production(state, productionMultiplier()) * dt);
       if (state.activeBoost && state.activeBoost.until <= current) { state.activeBoost = null; save(); }
@@ -654,6 +676,7 @@
         state.pendingEvent = { id: selected.id, until: current + C.eventLifetime(state, selected) };
         save();
       }
+      if (clickUiDirty && now - lastClickUi >= 50) { lastClickUi = now; checkAchievements(); render(); clickUiDirty = false; }
       if (now - lastUi > 250) { lastUi = now; checkAchievements(); render(); }
     }
     requestAnimationFrame(frame);
