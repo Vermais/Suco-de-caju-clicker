@@ -2,17 +2,29 @@
 (function(root) {
   'use strict';
   const DURATION = 20000, COOLDOWN = 20000, RATE = 5, PER_CLICK = 1.5;
+  const GRACE = 2000, DECAY = 4;
   const finite = n => Number.isFinite(n) && n >= 0 ? n : 0;
+  function chargeAt(state, now) {
+    const from = Math.max(state.decayAt || now, (state.lastInputAt || now) + GRACE);
+    return Math.max(0, state.charge - Math.max(0, now - from) / 1000 * DECAY);
+  }
+  function tick(state, now = Date.now()) {
+    if (!state.until || state.until <= now) state.charge = chargeAt(state, now);
+    state.decayAt = now;
+  }
   function normalize(raw, now = Date.now()) {
     const until = Math.min(now + DURATION, finite(raw?.until));
     const readyAt = Math.min(now + DURATION + COOLDOWN, Math.max(until ? until + COOLDOWN : 0, finite(raw?.readyAt)));
-    return {charge: until > now || readyAt > now ? 0 : Math.min(99.99, finite(raw?.charge)), until, readyAt};
+    const state = {charge: until > now || readyAt > now ? 0 : Math.min(99.99, finite(raw?.charge)), until, readyAt,
+      lastInputAt: Math.min(now, finite(raw?.lastInputAt) || now), decayAt: Math.min(now, finite(raw?.decayAt) || now)};
+    tick(state, now);
+    return state;
   }
   function view(state, now = Date.now()) {
     const active = state.until > now;
     const cooling = !active && state.readyAt > now;
     return {active, cooling, multiplier: active ? 2 : 1,
-      percent: active ? Math.min(100, (state.until - now) / DURATION * 100) : cooling ? 0 : state.charge,
+      percent: active ? Math.min(100, (state.until - now) / DURATION * 100) : cooling ? 0 : chargeAt(state, now),
       seconds: Math.max(0, Math.ceil(((active ? state.until : state.readyAt) - now) / 1000))};
   }
   function create() {
@@ -22,6 +34,9 @@
       if (owner !== state) { reset(); owner = state; }
       const elapsed = last === null ? 0 : Math.max(0, monotonicNow - last) / 1000;
       last = monotonicNow;
+      tick(state, now);
+      state.lastInputAt = now;
+      state.decayAt = now;
       if (state.readyAt > now || state.until > now) { tokens = 0; return false; }
       tokens = Math.min(PER_CLICK, tokens + elapsed * RATE);
       state.charge = Math.min(100, state.charge + tokens);
@@ -34,7 +49,7 @@
     }
     return {click, reset};
   }
-  const api = {create, normalize, view, DURATION, COOLDOWN};
+  const api = {create, normalize, view, tick, DURATION, COOLDOWN, GRACE, DECAY};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CajuAura = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -99,3 +99,7 @@ Pesquisa: a página cookie-clicker2.com descreve bônus temporários por cookies
 ## Aura visual e easter egg 67 — versão 2026-09-30-11
 
 Boost da aura cria contorno pulsante, órbita dourada/violeta e brilho ao redor de qualquer skin equipada até expirar. Números visíveis iguais a 67 (incluindo percentuais, unidades abreviadas, preços, ranking, contadores e campos) acionam um Pedro animado acima do texto por 3 segundos. Observador de DOM agrupa mudanças por frame e não reinicia o popup se o mesmo número permanecer 67. Considera o número exibido; 167 e 67,1 não disparam, 67 e 67,00 disparam. Não altera ganhos, saves ou balanceamento.
+
+## Fluidez, perda de aura e compra em lote — versão 2026-09-30-12
+
+67 agora é reconhecido como sequência dentro de qualquer número, incluindo 567 e 867 bi. Aura começa a perder 4 pontos/s depois de 2s sem clicar; pausas fora do jogo também reduzem a carga. Boost continua com duração de 20s. Eventos de clique não manipulam DOM, partículas ou lojas: todos os ganhos são contabilizados, apresentação no RAF, contadores a 100ms e loja a 250ms. Economia reutiliza cálculos entre alterações e preserva mudanças de buffs. Skin para de reescrever atributos e trocar imagem invisível a cada clique; remove partículas de rajadas do Pedro e reduz filtros sobre as duas poses. Conquista Atacado do caju exige compra única de pelo menos 100 unidades de um produtor, incluindo MÁX. Compras separadas não somam para a conquista; máximo de lote persiste no save e rebirth.

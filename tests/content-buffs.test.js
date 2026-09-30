@@ -31,7 +31,7 @@ test('mudas são entregues só ao renascer, e contratos mantêm teto de saldo',(
  reward.juice=100;assert.ok(C.missionReward(reward)<=2);
 });
 test('conteúdo novo usa IDs únicos e antigos saves não ganham compras automaticamente',()=>{
- assert.equal(C.MISSIONS.length,22);assert.equal(C.UPGRADES.length,400);assert.equal(C.ACHIEVEMENTS.length,138);
+ assert.equal(C.MISSIONS.length,22);assert.equal(C.UPGRADES.length,400);assert.equal(C.ACHIEVEMENTS.length,139);
  for(const list of [C.MISSIONS,C.UPGRADES,C.ACHIEVEMENTS,C.PERMANENT_UPGRADES]) assert.equal(new Set(list.map(x=>x.id)).size,list.length);
  const old=C.normalize({juice:123,permanentUpgrades:{production:2},upgrades:['recipe-0']});
  assert.equal(old.juice,123);assert.equal(old.permanentUpgrades.production,2);assert.equal(old.permanentUpgrades.seedlings,0);

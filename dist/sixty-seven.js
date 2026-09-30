@@ -2,8 +2,14 @@
 (function(root) {
   'use strict';
   function matches(text) {
-    return [...String(text).matchAll(/(?<![\p{L}\d.,−-])67(?:[.,]0+)?(?![\d.,])/gu)]
-      .map(match => ({start:match.index, end:match.index + match[0].length}));
+    const found = [];
+    for (const number of String(text).matchAll(/(?<![\p{L}\d])[-−+]?\d[\d.,]*/gu)) {
+      for (const pair of number[0].matchAll(/67/g)) {
+        const start = number.index + pair.index;
+        found.push({start, end:start + 2});
+      }
+    }
+    return found;
   }
   function newlyVisible(previous, current) {
     return current.filter(key => !previous.has(key));
@@ -11,7 +17,7 @@
   function start() {
     const seen = new WeakMap(), pending = new Set(), popups = new Set();
     let scheduled = false;
-    const skip = element => !element || element.closest('script,style,noscript,textarea,[data-pedro-67-effect]');
+    const skip = element => !element || element.closest('script,style,noscript,textarea,.pedro-popups,.juice-particle,[data-pedro-67-effect]');
     function position(popup) {
       let box = popup.range ? popup.range.getBoundingClientRect() : popup.anchor.getBoundingClientRect();
       if (!box.width && !box.height) box = popup.anchor.getBoundingClientRect();

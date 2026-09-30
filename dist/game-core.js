@@ -137,6 +137,7 @@
     ...[1e8, 1e10, 1e12].map((at, i) => ({ id: `expansion-flow-${at}`, name: ['Rio estelar','Mar galáctico','Fonte infinita'][i], description: 'Alcance ' + ['100 milhões','10 bilhões','1 trilhão'][i] + ' copos/s sem bônus temporários.', kind: 'cps', at }))
   ];
   const ACHIEVEMENTS = [
+    {id:'bulk-100',icon:'📦',name:'Atacado do caju',description:'Compre 100 ou mais unidades de um produtor em uma única compra.',kind:'batch',at:100},
     ...[12, 18, 22].map((at, i) => ({id:`collection-diversity-${at}`,icon:'🌈',name:['Doze sabores','Pomar universal','Todos os sabores'][i],kind:'diversity',at})),
     ...[50, 100, 200].map((at, i) => ({id:`collection-missions-${at}`,icon:'📜',name:['Contratante veterano','Cem contratos','Mestre dos contratos'][i],kind:'missions',at})),
     ...[1e21, 1e24, 1e30].map((at, i) => ({id:`collection-history-${at}`,icon:'🌠',name:['Memória estelar','Memória universal','Memória infinita'][i],kind:'allTime',at})),
@@ -321,8 +322,17 @@
     }
     return reward;
   }
+  function buyBuilding(state, building, count) {
+    if (!Number.isSafeInteger(count) || count < 1 || BUILDINGS[building?.id] !== building) return false;
+    const cost = batchCost(building, state.owned[building.id], count);
+    if (!Number.isFinite(cost) || state.juice + 1e-8 < cost) return false;
+    state.juice = Math.max(0, state.juice - cost);
+    state.owned[building.id] += count;
+    state.maxBatchPurchase = Math.max(state.maxBatchPurchase || 0, count);
+    return true;
+  }
   function newState() {
-    return { juice: 0, allTime: 0, runProduced: 0, owned: BUILDINGS.map(() => 0), upgrades: [], achievements: [], prestige: 0, prestigeEarned: 0, permanentUpgrades: {}, rebirths: 0, clicks: 0, skin: 'cup',
+    return { juice: 0, allTime: 0, runProduced: 0, owned: BUILDINGS.map(() => 0), upgrades: [], achievements: [], prestige: 0, prestigeEarned: 0, permanentUpgrades: {}, rebirths: 0, clicks: 0, maxBatchPurchase: 0, skin: 'cup',
       eventStats: Object.fromEntries(['total', ...EVENTS.map(e => e.id)].map(id => [id, 0])), claimedMissions: [], missionsCompleted: 0, pendingEvent: null, activeBoost: null, aura: aura.normalize(null), handmade: 0, nextEventAt: Date.now() + 90000, savedAt: Date.now() };
   }
   function normalize(raw) {
@@ -350,7 +360,7 @@
       upgrades: [...new Set(mapped)].filter(id => UPGRADES.some(u => u.id === id)),
       achievements: [...new Set(Array.isArray(raw.achievements) ? raw.achievements : [])].filter(id => ACHIEVEMENTS.some(a => a.id === id)),
       prestige: Math.floor(safe(raw.prestige)), rebirths: Math.floor(safe(raw.rebirths)), clicks: Math.floor(safe(raw.clicks)), skin: stickers.normalizeSkin(raw.skin),
-      prestigeEarned: earned, handmade: safe(raw.handmade),
+      prestigeEarned: earned, maxBatchPurchase: Math.floor(safe(raw.maxBatchPurchase)), handmade: safe(raw.handmade),
       permanentUpgrades: Object.fromEntries(PERMANENT_UPGRADES.map(u => [u.id, Math.min(u.max, Math.floor(safe(raw.permanentUpgrades?.[u.id])))])),
       claimedMissions: [...new Set(Array.isArray(raw.claimedMissions) ? raw.claimedMissions : [])].filter(id => MISSIONS.some(m => m.id === id)),
       missionsCompleted: Math.max(Math.floor(safe(raw.missionsCompleted)), new Set((Array.isArray(raw.claimedMissions) ? raw.claimedMissions : []).filter(id => MISSIONS.some(m => m.id === id))).size),
@@ -379,6 +389,7 @@
     return pending;
   }
   function progressValue(state, goal, cps) {
+    if (goal.kind === 'batch') return state.maxBatchPurchase || 0;
     if (goal.kind === 'run') return state.runProduced;
     if (goal.kind === 'allTime') return state.allTime;
     if (goal.kind === 'buildings') return state.owned.reduce((sum, n) => sum + n, 0);
@@ -413,7 +424,7 @@
     }
     return EVENTS[EVENTS.length - 1];
   }
-  const api = { GOLDEN_LUCKY_CHANCE, MISSIONS, progressValue, missionReward, claimMission, selectEvent, BUILDINGS, UPGRADES, ACHIEVEMENTS, EVENTS, PERMANENT_UPGRADES, permanentLevel, permanentCost, buyPermanent, earnedNuts, offlineRate, offlineLimit, eventDelay, eventLifetime, starterJuice, starterBuildings, price, batchCost, affordableCount, prestigePotential, prestigePending, prestigeCost, upgradeUnlocked, production, clickPower, eventReward, newState, normalize, rebirth };
+  const api = { buyBuilding, GOLDEN_LUCKY_CHANCE, MISSIONS, progressValue, missionReward, claimMission, selectEvent, BUILDINGS, UPGRADES, ACHIEVEMENTS, EVENTS, PERMANENT_UPGRADES, permanentLevel, permanentCost, buyPermanent, earnedNuts, offlineRate, offlineLimit, eventDelay, eventLifetime, starterJuice, starterBuildings, price, batchCost, affordableCount, prestigePotential, prestigePending, prestigeCost, upgradeUnlocked, production, clickPower, eventReward, newState, normalize, rebirth };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CajuCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

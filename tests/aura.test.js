@@ -62,3 +62,25 @@ test('aura dobra clique inteiro uma vez inclusive melhorias de CpS', () => {
   assert.equal(C.clickPower(state, 5, 7) * factor, before * 2);
   assert.equal(C.production(state, 7 * factor), C.production(state, 7) * 2);
 });
+
+test('aura tem 2s de tolerância e perde 4 pontos/s inclusive ao carregar save', () => {
+  const state = A.normalize(null, 100000);
+  state.charge = 80;
+  state.lastInputAt = 100000;
+  state.decayAt = 100000;
+  assert.equal(A.view(state, 102000).percent, 80);
+  A.tick(state, 103000);
+  assert.equal(state.charge, 76);
+  const loaded = A.normalize(JSON.parse(JSON.stringify(state)), 108000);
+  assert.equal(loaded.charge, 56);
+  assert.equal(A.view(loaded, 130000).percent, 0);
+});
+test('cliques manuais não sofrem perda de aura, e voltar após uma pausa não restaura a carga', () => {
+  const {state, clock, t} = fill(500);
+  assert.equal(t, 33500);
+  const partial = A.normalize(null, 100000), next = A.create();
+  for(let t=0;t<=10000;t+=500) next.click(partial,t,100000+t);
+  assert.equal(partial.charge,30);
+  next.click(partial,20000,120000);
+  assert.equal(partial.charge,1.5);
+});

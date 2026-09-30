@@ -115,3 +115,9 @@ dialog[open]{animation:dialogIn .24s ease-out}
 @keyframes number67Right{0%,100%{opacity:0}50%{opacity:1}}
 @keyframes number67Appear{0%{opacity:0;transform:translate(-50%,12px) scale(.65)}8%,88%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-12px) scale(.9)}}
 @media(prefers-reduced-motion:reduce){.number-67-pedro .number-67-right{display:none}.skin-aura::after{opacity:.6}}
+
+/* Skin em rajadas: sem pulso de escala ou filtros caros a cada clique. */
+.juice-button.pedro-skin:active{transform:scale(.99)}
+.juice-button.pedro-skin .pedro-frames img{filter:none;contain:layout paint}
+.juice-button.aura-empowered .pedro-frames{filter:drop-shadow(0 0 12px #d6a6ff)}
+.juice-button.aura-empowered .pedro-frames img{filter:none}
