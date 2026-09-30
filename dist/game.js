@@ -4,7 +4,7 @@
   const S = window.CajuStickers;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-30-12';
+  const gameVersion = '2026-09-30-13';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -13,6 +13,27 @@
   const precise = window.CajuNumbers.formatFraction;
   const FX = window.CajuEffects;
   const setText = (id, value) => { const node = $(id); const text = String(value); if (node.textContent !== text) node.textContent = text; };
+  const Sound = window.CajuAudio.create({onChange(audio) {
+    setText('soundToggle', audio.muted ? '🔇 Som desligado' : '🔊 Som ligado');
+    $('soundToggle').setAttribute('aria-pressed', String(audio.muted));
+    setText('soundStatus', audio.muted ? 'Silenciado' : !audio.unlocked ? 'Toque para iniciar a música' : audio.aura ? 'Aura frenética · 146 BPM' : 'Suco em ritmo · 100 BPM');
+    $('soundStatus').dataset.audioState = audio.state;
+  }});
+  const audioSettings = Sound.status();
+  $('musicVolume').value = Math.round(audioSettings.music * 100);
+  $('effectsVolume').value = Math.round(audioSettings.sfx * 100);
+  $('soundToggle').addEventListener('click', () => Sound.configure({muted:!Sound.status().muted}));
+  $('musicVolume').addEventListener('input', event => Sound.configure({music:Number(event.target.value)/100}));
+  $('effectsVolume').addEventListener('input', event => Sound.configure({sfx:Number(event.target.value)/100}));
+  function startSound() {
+    document.removeEventListener('pointerdown', startSound, true);
+    document.removeEventListener('keydown', startSound, true);
+    Sound.unlock();
+  }
+  document.addEventListener('pointerdown', startSound, true);
+  document.addEventListener('keydown', startSound, true);
+  document.addEventListener('visibilitychange', () => Sound.visibility());
+  Sound.configure({});
   let raw = null;
   try { raw = JSON.parse(localStorage.getItem(saveKey) || localStorage.getItem(oldKey)); } catch (_) {}
   let state = C.normalize(raw);
@@ -169,6 +190,7 @@
     $('auraMeter').setAttribute('aria-valuenow', String(Math.round(aura.percent)));
     $('auraPanel').classList.toggle('aura-active', aura.active);
     $('juiceButton').classList.toggle('aura-empowered', aura.active);
+    Sound.setAura(aura.active);
     setText('auraLabel', aura.active ? '2× · ' + aura.seconds + 's' : aura.cooling ? 'Recarga · ' + aura.seconds + 's' : Math.floor(aura.percent) + '%');
     const status = aura.active ? 'Produção e cliques em dobro!' : aura.cooling ? 'A aura volta a carregar após a recarga.' : 'Clique para carregar · ao parar, a aura diminui';
     if ($('auraStatus').textContent !== status) $('auraStatus').textContent = status;
@@ -328,7 +350,7 @@
         changed = true;
       }
     }
-    if (changed) { renderAchievements(); FX.celebrate(document.querySelector('.play')); toast('Nova conquista desbloqueada!'); save(); }
+    if (changed) { Sound.play('achievement'); renderAchievements(); FX.celebrate(document.querySelector('.play')); toast('Nova conquista desbloqueada!'); save(); }
   }
   C.BUILDINGS.forEach(b => {
     const button = document.createElement('button');
@@ -338,6 +360,7 @@
       const amount = quantityFor(b);
       if (amount < 1) return;
       if (!C.buyBuilding(state, b, amount)) return;
+      Sound.play('purchase');
       FX.animate(button, [{ transform: 'scale(.97)' }, { transform: 'scale(1.015)', borderColor: '#ffe2a1' }, { transform: 'scale(1)' }]);
       FX.animate($('cps'), [{ color: '#fff6c9', transform: 'scale(1.1)' }, { transform: 'scale(1)' }]);
       checkAchievements(); render(true); save();
@@ -387,6 +410,7 @@
         if (state.upgrades.includes(u.id) || state.juice < u.cost || !C.upgradeUnlocked(u, state)) return;
         state.juice -= u.cost;
         state.upgrades.push(u.id);
+        Sound.play('upgrade');
         FX.animate($('upgradeList'), [{ opacity: .6, transform: 'translateY(6px)' }, { opacity: 1, transform: 'translateY(0)' }]);
         toast(u.name + ' comprada!');
         render(true); save();
@@ -403,6 +427,7 @@
       if (!gain) return;
       checkAchievements(); render(true); save();
       FX.celebrate(document.querySelector('.play'));
+      Sound.play('mission');
       toast('Desafio concluído! +' + format(gain) + ' copos');
     });
     $('missionList').append(card);
@@ -443,6 +468,7 @@
     button.innerHTML = `<span class="upgrade-icon" aria-hidden="true">${u.icon}</span><span class="upgrade-main"><strong>${u.name}</strong><small>${u.description}</small><small class="permanent-level"></small></span><span class="upgrade-price"></span>`;
     button.addEventListener('click', () => {
       if (!C.buyPermanent(state, u.id)) return;
+      Sound.play('upgrade');
       FX.animate(button, [{ backgroundColor: '#795322', transform: 'scale(1.02)' }, { transform: 'scale(1)' }], 500);
       toast(u.name + ': buff permanente comprado!');
       render(); save();
@@ -534,10 +560,11 @@
   }
   $('juiceButton').addEventListener('click', event => {
     const now = performance.now();
+    Sound.play('click', now);
     if (state.skin === 'pedro67') pedroMotion.click(now);
     const boost = currentBoost();
     const activated = !document.hidden && auraClock.click(state.aura, now);
-    if (activated) { FX.celebrate($('juiceArea')); toast('Aura completa! Produção e cliques 2× por 20 segundos.'); save(); }
+    if (activated) { Sound.play('aura', now); FX.celebrate($('juiceArea')); toast('Aura completa! Produção e cliques 2× por 20 segundos.'); save(); }
     const gain = clickGain();
     earn(gain); state.clicks++; state.handmade += gain;
     // O evento de clique só contabiliza. Apresentação ocorre no RAF.
@@ -561,7 +588,8 @@
   $('activateStickerBuff').addEventListener('click', async () => {
     const card = S.cardForSkin(state.skin);
     if (!card || buffBusy || !cloud.user) return;
-    await syncStickerBuff(card.id); render();
+    if (await syncStickerBuff(card.id)) Sound.play('sticker');
+    render();
   });
   $('closeStickers').addEventListener('click', () => $('stickerDialog').close());
   $('refreshStickers').addEventListener('click', refreshStickers);
@@ -579,6 +607,7 @@
     FX.animate($('juiceCount'), [{ transform: 'scale(1.12)', color: '#ffd46c' }, { transform: 'scale(1)' }], 450);
     if (reward.gain) { earn(reward.gain); floatText('+' + format(reward.gain), event); }
     if (reward.boost) state.activeBoost = { id: reward.boost.id, production: reward.boost.production, click: reward.boost.click, until: Date.now() + reward.boost.duration };
+    Sound.play('event');
     state.eventStats.total++;
     state.eventStats[pending.id]++;
     checkAchievements();
@@ -676,6 +705,7 @@
     const gain = C.rebirth(state);
     dialog.close();
     if (!gain) return;
+    Sound.play('rebirth');
     FX.celebrate(document.querySelector('.play'));
     FX.animate($('prestigeTotal'), [{ transform: 'scale(1.3)', color: '#fff2ad' }, { transform: 'scale(1)' }], 650);
     checkAchievements(); lastUpgradeSignature = '';

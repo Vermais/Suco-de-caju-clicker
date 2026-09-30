@@ -19,6 +19,7 @@
   <script src="./hand-motion.js" defer></script>
   <script src="./sixty-seven.js" defer></script>
   <script src="./fast-economy.js" defer></script>
+  <script src="./audio.js" defer></script>
   <script src="./game.js" defer></script>
 </head>
 <body>
@@ -30,7 +31,7 @@
       <div id="auraPanel" class="aura-panel"><div class="aura-heading"><strong>AURA</strong><span id="auraLabel">0%</span></div><div id="auraMeter" class="aura-track" role="progressbar" aria-label="Aura" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="auraFill"></span></div><p id="auraStatus" role="status">Clique para carregar · 2× por 20s</p></div>
       <p id="bonusStatus" class="tap-hint">Clique no copo para preparar suco</p>
       <div class="skin-picker" role="group" aria-label="Escolher skin"><span>Skin</span><button type="button" data-skin="cup" class="selected" aria-pressed="true">🥤 Copo de caju</button><button type="button" data-skin="pedro67" aria-pressed="false">🙌 Pedro Victor 6 7</button><button id="openStickers" type="button" disabled>🖼️ Minhas figurinhas</button></div><div class="sticker-buff"><button id="activateStickerBuff" type="button" disabled>Ativar buff da figurinha</button><p id="stickerBuffStatus" role="status">Equipe uma figurinha da sua coleção para usar seu buff.</p></div><p id="stickerStatus" class="sticker-status" role="status">Entre com a conta do álbum para usar suas figurinhas.</p>
-      <div class="play-footer"><span>Por clique <b id="clickValue">1</b></span><span>Nesta safra <b id="runTotal">0</b></span></div>
+      <div class="sound-panel"><div class="sound-row"><button id="soundToggle" type="button" aria-pressed="false">🔊 Som ligado</button><span id="soundStatus">Toque para iniciar a música</span></div><details><summary>Volume</summary><label>Música <input id="musicVolume" type="range" min="0" max="100" value="30" aria-label="Volume da música"></label><label>Efeitos <input id="effectsVolume" type="range" min="0" max="100" value="55" aria-label="Volume dos efeitos"></label></details></div><div class="play-footer"><span>Por clique <b id="clickValue">1</b></span><span>Nesta safra <b id="runTotal">0</b></span></div>
     </section>
     <section class="buildings panel" aria-label="Construções">
       <div class="section-heading"><div><span class="eyebrow">AUTOMAÇÃO</span><h1>Produção</h1></div><span id="ownedTotal" class="muted">0 unidades</span></div>

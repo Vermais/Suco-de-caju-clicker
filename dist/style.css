@@ -121,3 +121,6 @@ dialog[open]{animation:dialogIn .24s ease-out}
 .juice-button.pedro-skin .pedro-frames img{filter:none;contain:layout paint}
 .juice-button.aura-empowered .pedro-frames{filter:drop-shadow(0 0 12px #d6a6ff)}
 .juice-button.aura-empowered .pedro-frames img{filter:none}
+
+.sound-panel{width:min(100%,330px);margin:5px auto 0;flex-shrink:0;color:#d7bd99;font-size:.75rem}.sound-row{display:flex;gap:10px;align-items:center}.sound-row button{border:1px solid #a57843;border-radius:8px;background:#48301b;color:#ffe3af;padding:6px 9px;font:inherit;white-space:nowrap}.sound-row span{font-size:.72rem}.sound-panel summary{cursor:pointer;padding:6px 0;color:#ecc787}.sound-panel details{position:relative}.sound-panel details[open]{background:#2c1c10;border-radius:8px;padding:0 10px 6px}.sound-panel label{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:6px 0}.sound-panel input{width:65%;accent-color:#ffca6c}.sound-panel button:focus-visible,.sound-panel input:focus-visible{outline:2px solid #ffd989;outline-offset:3px}
+@media(max-width:700px){.play{height:860px}}
