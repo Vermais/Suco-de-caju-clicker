@@ -54,3 +54,12 @@ dialog[open]{animation:dialogIn .24s ease-out}
 .tabs{flex-wrap:wrap}.tabs button{flex:1 1 90px}
 .mission-list{display:grid;gap:12px}.mission-card{background:#352416;border:1px solid #78512d;border-radius:12px;padding:15px}.mission-card strong{color:#ffe0a1}.mission-card p,.mission-meta{color:#cdb08c;font-size:.8rem;line-height:1.5}.mission-card progress{width:100%;height:10px;accent-color:#eeb34e}.mission-card button{width:100%;margin-top:10px;font-size:.8rem}.mission-card button:disabled{opacity:.45;cursor:default}.mission-card.completed{border-color:#729758}.mission-meta{margin-top:5px;font-variant-numeric:tabular-nums}
 .event-button[data-kind=merchant]{background:radial-gradient(#fff1cc,#cd8b49)}.event-button[data-kind=aurora]{background:radial-gradient(#d8fff1,#74abd3);border-color:#bfffe6}.event-button[data-kind=breeze]{background:radial-gradient(#f0ffda,#83b65d);border-color:#d4ffb2}
+
+/* Figurinhas da coleção como alvo dos cliques. */
+.skin-picker{flex-wrap:wrap}.sticker-status{font-size:.78rem;color:#c8b69e;max-width:420px;margin:8px auto 0;text-align:center}
+.juice-button.sticker-skin img{object-fit:contain;border-radius:16px;max-height:300px;width:auto;max-width:100%;filter:drop-shadow(0 12px 18px #0008)}
+#stickerDialog{width:min(760px,calc(100vw - 32px));max-height:85dvh;overflow-y:auto;box-sizing:border-box}
+#stickerDialog input{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;background:#291c12;color:#fff;border:1px solid #826039;margin-top:8px}
+.sticker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:12px;margin:16px 0}
+.sticker-option{display:flex;flex-direction:column;gap:8px;padding:10px;background:#342215;border:2px solid #6e4a29;color:#fff;border-radius:12px;cursor:pointer;text-align:center;font:inherit}
+.sticker-option img{width:100%;height:145px;object-fit:contain;border-radius:8px}.sticker-option span{font-size:.78rem;line-height:1.3}.sticker-option.selected{border-color:#ffd46c;background:#53381c}.sticker-option:focus-visible{outline:3px solid #ffd46c;outline-offset:3px}.sticker-option:disabled{opacity:.6}.skin-picker button:disabled{opacity:.5;cursor:not-allowed}

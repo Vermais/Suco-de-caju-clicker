@@ -55,3 +55,11 @@ Novos campos `claimedMissions` e `missionsCompleted` ficam no JSON existente do 
 ## Eventos mais frequentes
 
 Intervalo base de 90–180 segundos. Estação de festas mantém sua redução de intervalo (no nível 5: 56,25–112,5 segundos). O dourado agora tem 70% de chance de buff e 30% de prêmio instantâneo. Aurora e Brisa aparecem mais; a distribuição completa dá aproximadamente 71% de eventos com buff. Não empilhamos multiplicadores: um evento novo substitui o bônus anterior. Partidas carregadas limitam o tempo restante até o próximo evento ao novo máximo, preservando saldo e eventos já visíveis.
+
+## Skins de figurinhas do álbum
+
+“Minhas figurinhas” consulta somente `album_progress.owned` da conta autenticada, protegida pela política de leitura do próprio usuário. O seletor mostra exclusivamente IDs com cópias positivas, permite buscar nome/número e verifica novamente a coleção ao equipar. A coleção é atualizada a cada 45 segundos com a página visível, ao voltar à página e ao abrir o seletor. Skins não gastam cópias nem alteram ganhos.
+
+`state.skin` aceita os modelos existentes e `sticker:1` até `sticker:111`, persiste no salvamento e no renascimento. O RPC de salvamento verifica a posse usando `auth.uid()`; figurinhas inexistentes ou sem posse voltam ao copo, preservando o restante do progresso. Sua resposta informa a skin efetivamente salva. Imagens e nomes usam o catálogo original do álbum. A migration `20260930111621_clicker_owned_sticker_skins.sql` foi aplicada no Supabase compartilhado.
+
+Execute `node --test --test-isolation=none tests/*.test.js` para verificar todas as regras, sincronização e skins.

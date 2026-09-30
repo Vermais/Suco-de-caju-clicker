@@ -5,7 +5,7 @@
   const KEY = 'sb_publishable_R5rN_XnQ7u_B-bv900ZY1g_K6V_wIIl';
   const ALBUM = 'https://album-pedro-victor.vercel.app';
   const STORAGE = 'caju-album-session-v1';
-  const listeners = { authorized: () => {}, status: () => {}, signedOut: () => {} };
+  const listeners = { authorized: () => {}, status: () => {}, signedOut: () => {}, skinChanged: () => {} };
   let session = null;
   let revision = 0;
   let queued = null;
@@ -106,6 +106,10 @@
       });
       if (session?.user?.id === userId) {
         revision = Number(result.revision);
+        if (typeof result.skin === 'string' && result.skin !== snapshot.skin) {
+          if (queued?.skin === snapshot.skin) queued.skin = result.skin;
+          listeners.skinChanged(result.skin, snapshot.skin);
+        }
         status('Salvo na sua conta');
         return true;
       }
@@ -154,6 +158,14 @@
       method: 'POST', body: JSON.stringify({ p_sort: sort })
     });
   }
+  async function ownedStickers() {
+    const userId = session?.user?.id;
+    if (!userId) throw new Error('Entre com sua conta do álbum.');
+    const rows = await request('/rest/v1/album_progress?user_id=eq.' + encodeURIComponent(userId) + '&select=owned&limit=1');
+    if (session?.user?.id !== userId) throw new Error('A conta mudou. Abra suas figurinhas novamente.');
+    const owned = rows?.[0]?.owned;
+    return owned && typeof owned === 'object' && !Array.isArray(owned) ? owned : {};
+  }
   function logout() {
     session = null; revision = 0; queued = null; conflict = false; loadedUser = null;
     clearTimeout(timer);
@@ -182,6 +194,6 @@
       } catch (_) { localStorage.removeItem(STORAGE); }
     }
   }
-  window.CajuCloud = { init, login, logout, queueSave, flush, claimRebirth, leaderboard,
+  window.CajuCloud = { init, login, logout, queueSave, flush, claimRebirth, leaderboard, ownedStickers,
     get user() { return session?.user || null; }, get mode() { return session?.mode || 'guest'; } };
 })();

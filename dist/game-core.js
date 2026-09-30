@@ -1,5 +1,6 @@
 /* Regras puras do jogo, compartilhadas pelo navegador e pelos testes. */
 (function (root) {
+  const stickers = typeof module !== 'undefined' && module.exports ? require('./stickers.js') : root.CajuStickers;
   const BUILDINGS = [
     ['Espremedor', '✋', 15, 0.1],
     ['Barraca', '⛺', 100, 1],
@@ -331,7 +332,7 @@
       owned: BUILDINGS.map((_, i) => Math.max(0, Math.floor(safe(raw.owned?.[i])))),
       upgrades: [...new Set(mapped)].filter(id => UPGRADES.some(u => u.id === id)),
       achievements: [...new Set(Array.isArray(raw.achievements) ? raw.achievements : [])].filter(id => ACHIEVEMENTS.some(a => a.id === id)),
-      prestige: Math.floor(safe(raw.prestige)), rebirths: Math.floor(safe(raw.rebirths)), clicks: Math.floor(safe(raw.clicks)), skin: raw.skin === 'pedro67' ? 'pedro67' : 'cup',
+      prestige: Math.floor(safe(raw.prestige)), rebirths: Math.floor(safe(raw.rebirths)), clicks: Math.floor(safe(raw.clicks)), skin: stickers.normalizeSkin(raw.skin),
       prestigeEarned: earned, handmade: safe(raw.handmade),
       permanentUpgrades: Object.fromEntries(PERMANENT_UPGRADES.map(u => [u.id, Math.min(u.max, Math.floor(safe(raw.permanentUpgrades?.[u.id])))])),
       claimedMissions: [...new Set(Array.isArray(raw.claimedMissions) ? raw.claimedMissions : [])].filter(id => MISSIONS.some(m => m.id === id)),

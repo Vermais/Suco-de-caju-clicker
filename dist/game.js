@@ -1,9 +1,10 @@
 (() => {
   'use strict';
   const C = window.CajuCore;
+  const S = window.CajuStickers;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-30-4';
+  const gameVersion = '2026-09-30-5';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -14,6 +15,65 @@
   let raw = null;
   try { raw = JSON.parse(localStorage.getItem(saveKey) || localStorage.getItem(oldKey)); } catch (_) {}
   let state = C.normalize(raw);
+  let stickerOwned = {};
+  let stickerUser = null;
+  let stickerRequest = 0;
+  let stickerLoading = false;
+  function renderStickerGrid() {
+    const grid = $('stickerGrid');
+    grid.replaceChildren();
+    const query = $('stickerSearch').value.trim().toLocaleLowerCase('pt-BR');
+    const cards = S.ownedCards(stickerOwned);
+    $('stickerDialogStatus').textContent = stickerLoading ? 'Conferindo sua coleção…' : `${cards.length} figurinhas disponíveis · escolha uma para clicar.`;
+    for (const card of cards.filter(c => (c.name + ' ' + c.id).toLocaleLowerCase('pt-BR').includes(query))) {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'sticker-option';
+      button.classList.toggle('selected', state.skin === 'sticker:' + card.id);
+      button.setAttribute('aria-pressed', String(state.skin === 'sticker:' + card.id));
+      const image = document.createElement('img'); image.src = card.image; image.alt = ''; image.loading = 'lazy'; image.draggable = false;
+      const label = document.createElement('span'); label.textContent = `#${card.id} · ${card.name}`;
+      button.append(image, label);
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        const userId = cloud.user?.id;
+        if (!await refreshStickers() || userId !== cloud.user?.id || !S.hasOwned(stickerOwned, card.id)) {
+          toast('Não foi possível confirmar que esta figurinha está na sua conta.'); return;
+        }
+        state.skin = 'sticker:' + card.id;
+        $('stickerDialog').close(); render(); save();
+        toast('Skin equipada: ' + card.name);
+      });
+      grid.append(button);
+    }
+    if (!cards.length && !stickerLoading) $('stickerDialogStatus').textContent = 'Você ainda não tem figurinhas. Abra pacotes no álbum para desbloquear skins.';
+  }
+  async function refreshStickers() {
+    const userId = cloud.user?.id;
+    if (!userId) return false;
+    const requestId = ++stickerRequest;
+    stickerLoading = true;
+    $('stickerStatus').textContent = 'Conferindo suas figurinhas no álbum…';
+    if ($('stickerDialog').open) renderStickerGrid();
+    try {
+      const owned = await cloud.ownedStickers();
+      if (requestId !== stickerRequest || cloud.user?.id !== userId) return false;
+      stickerOwned = owned; stickerUser = userId; stickerLoading = false;
+      const selected = S.cardForSkin(state.skin);
+      if (selected && !S.hasOwned(owned, selected.id)) {
+        state.skin = 'cup'; save(); toast('Esta figurinha não está mais na sua coleção. Skin do copo equipada.');
+      }
+      $('stickerStatus').textContent = `${S.ownedCards(owned).length} figurinhas da sua conta disponíveis como skin.`;
+      render(); if ($('stickerDialog').open) renderStickerGrid();
+      return true;
+    } catch (_) {
+      if (requestId === stickerRequest) {
+        stickerLoading = false;
+        $('stickerStatus').textContent = 'Não foi possível atualizar a coleção. Tente novamente em Minhas figurinhas.';
+        if ($('stickerDialog').open) $('stickerDialogStatus').textContent = 'Falha ao conferir a coleção. Clique em Atualizar coleção para tentar novamente.';
+      }
+      return false;
+    }
+  }
   let buyMode = '1';
   let lastFrame = performance.now();
   let lastUi = 0;
@@ -90,6 +150,7 @@
   }
   cloud.init({
     authorized({ user, state: remote, newAccount, mode }) {
+      if (stickerUser !== user.id) { stickerRequest++; stickerOwned = {}; stickerUser = null; }
       if (remote && !remote.rebirths) localStorage.removeItem(pendingRewardKey(user.id));
       let cache = null;
       try { cache = JSON.parse(localStorage.getItem(userSaveKey(user.id))); } catch (_) {}
@@ -106,9 +167,17 @@
       $('accountButton').disabled = mode === 'embedded';
       setAlbumStatus('Conectado ao Álbum Pedro Victor · cada renascimento vale +10 🧃', true);
       syncPendingAlbumReward().catch(error => setAlbumStatus(error.message));
+      refreshStickers();
       if (!$('leaderboardPanel').hidden) loadRanking();
     },
+    skinChanged(skin, savedSkin) {
+      if (state.skin !== savedSkin) return;
+      state.skin = S.normalizeSkin(skin); render(); save();
+    },
     signedOut() {
+      stickerRequest++; stickerOwned = {}; stickerUser = null; stickerLoading = false;
+      $('stickerDialog').close();
+      $('stickerStatus').textContent = 'Entre com a conta do álbum para usar suas figurinhas.';
       let guest = null;
       try { guest = JSON.parse(localStorage.getItem(saveKey)); } catch (_) {}
       state = C.normalize(guest);
@@ -286,12 +355,17 @@
     permanentButtons.push(button);
   });
   function render(force = false) {
+    const selectedSticker = S.cardForSkin(state.skin);
+    const sticker = cloud.user?.id === stickerUser && selectedSticker && S.hasOwned(stickerOwned, selectedSticker.id) ? selectedSticker : null;
     const pedroSkin = state.skin === 'pedro67';
+    $('openStickers').disabled = !cloud.user;
+    $('openStickers').classList.toggle('selected', !!sticker);
     const skinImage = $('skinImage');
-    const skinSource = pedroSkin ? './pedro-67.svg' : './caju.webp';
+    const skinSource = sticker ? sticker.image : pedroSkin ? './pedro-67.svg' : './caju.webp';
     if (skinImage.getAttribute('src') !== skinSource) skinImage.setAttribute('src', skinSource);
     $('juiceButton').classList.toggle('pedro-skin', pedroSkin);
-    $('juiceButton').setAttribute('aria-label', pedroSkin ? 'Pedro Victor fazendo 6 7: preparar suco de caju' : 'Preparar suco de caju');
+    $('juiceButton').classList.toggle('sticker-skin', !!sticker);
+    $('juiceButton').setAttribute('aria-label', sticker ? sticker.name + ': preparar suco de caju' : pedroSkin ? 'Pedro Victor fazendo 6 7: preparar suco de caju' : 'Preparar suco de caju');
     document.querySelectorAll('[data-skin]').forEach(button => {
       const selected = button.dataset.skin === state.skin;
       button.classList.toggle('selected', selected);
@@ -333,7 +407,7 @@
     });
     const seconds = boost ? Math.ceil((boost.until - Date.now()) / 1000) : 0;
     const label = C.EVENTS.find(e => e.id === boost?.id)?.name || 'Bônus da safra';
-    $('bonusStatus').textContent = boost ? `${label}: produção ${boost.production}× e clique ${boost.click}× por ${seconds}s` : pedroSkin ? 'Clique no Pedro Victor para preparar suco' : 'Clique no copo para preparar suco';
+    $('bonusStatus').textContent = boost ? `${label}: produção ${boost.production}× e clique ${boost.click}× por ${seconds}s` : sticker ? 'Clique na figurinha para preparar suco' : pedroSkin ? 'Clique no Pedro Victor para preparar suco' : 'Clique no copo para preparar suco';
     $('bonusStatus').classList.toggle('active', !!boost);
     const pendingEvent = state.pendingEvent && state.pendingEvent.until > Date.now() ? C.EVENTS.find(e => e.id === state.pendingEvent.id) : null;
     eventButton.hidden = !pendingEvent;
@@ -371,6 +445,16 @@
     FX.animate($('juiceButton'), [{ opacity: .2, transform: 'scale(.85)' }, { opacity: 1, transform: 'scale(1)' }], 450);
     render(); save();
   }));
+  $('openStickers').addEventListener('click', () => {
+    if (!cloud.user) return;
+    $('stickerSearch').value = ''; $('stickerDialog').showModal();
+    renderStickerGrid(); refreshStickers();
+  });
+  $('closeStickers').addEventListener('click', () => $('stickerDialog').close());
+  $('refreshStickers').addEventListener('click', refreshStickers);
+  $('stickerSearch').addEventListener('input', renderStickerGrid);
+  setInterval(() => { if (!document.hidden && cloud.user) refreshStickers(); }, 45000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && cloud.user) refreshStickers(); });
   eventButton.addEventListener('click', event => {
     const pending = state.pendingEvent;
     if (!pending || pending.until <= Date.now()) return;

@@ -8,6 +8,7 @@
   <title>Suco de Caju Clicker</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23231509'/%3E%3Cpath d='M17 15h30l-4 36H21z' fill='%23f5a526'/%3E%3Cpath d='M20 19h24l-1 7H21z' fill='%23ffe194'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="./style.css">
+  <script src="./stickers.js" defer></script>
   <script src="./game-core.js" defer></script>
   <script src="./cloud.js" defer></script>
   <script src="./numbers.js" defer></script>
@@ -21,7 +22,7 @@
       <div class="score" aria-live="polite"><strong id="juiceCount">0</strong><div>copos de suco de caju</div><p><b id="cps">0</b> copos por segundo</p></div>
       <div id="juiceArea" class="juice-area"><div class="halo"></div><button id="juiceButton" class="juice-button" aria-label="Preparar suco de caju"><img id="skinImage" src="./caju.webp" alt="" draggable="false"></button><button id="eventButton" class="event-button" aria-label="Coletar evento de caju" hidden><span id="eventIcon" class="event-icon">🌟</span><span id="eventLabel">CAJU DOURADO</span></button></div>
       <p id="bonusStatus" class="tap-hint">Clique no copo para preparar suco</p>
-      <div class="skin-picker" role="group" aria-label="Escolher skin"><span>Skin</span><button type="button" data-skin="cup" class="selected" aria-pressed="true">🥤 Copo de caju</button><button type="button" data-skin="pedro67" aria-pressed="false">🙌 Pedro Victor 6 7</button></div>
+      <div class="skin-picker" role="group" aria-label="Escolher skin"><span>Skin</span><button type="button" data-skin="cup" class="selected" aria-pressed="true">🥤 Copo de caju</button><button type="button" data-skin="pedro67" aria-pressed="false">🙌 Pedro Victor 6 7</button><button id="openStickers" type="button" disabled>🖼️ Minhas figurinhas</button></div><p id="stickerStatus" class="sticker-status" role="status">Entre com a conta do álbum para usar suas figurinhas.</p>
       <div class="play-footer"><span>Por clique <b id="clickValue">1</b></span><span>Nesta safra <b id="runTotal">0</b></span></div>
     </section>
     <section class="buildings panel" aria-label="Construções">
@@ -41,6 +42,7 @@
   </main>
   <dialog id="rebirthDialog"><div class="dialog-icon">🌰</div><h2>Começar uma nova safra?</h2><p>Você receberá <b id="dialogPending">0</b> castanhas. O saldo, as construções e as melhorias comuns serão reiniciados. Buffs, conquistas e histórico continuam; kits comprados fornecem recursos iniciais. As castanhas são calculadas pelo saldo atual, que será consumido.</p><p><strong>Recompensa conectada: +10 🧃 no Álbum Pedro Victor.</strong></p><div class="dialog-actions"><button id="cancelRebirth" class="secondary">Continuar produzindo</button><button id="confirmRebirth" class="primary">Sim, renascer</button></div></dialog>
   <dialog id="accountDialog"><h2>Conta do Álbum Pedro Victor</h2><p>Entre com o mesmo e-mail e senha do álbum para salvar sua partida no Supabase e continuar em outro dispositivo.</p><form id="accountForm"><label>E-mail<input id="accountEmail" type="email" autocomplete="email" required></label><label>Senha<input id="accountPassword" type="password" autocomplete="current-password" required></label><p id="accountError" class="account-error" role="alert"></p><div class="dialog-actions"><button id="cancelAccount" class="secondary" type="button">Cancelar</button><button id="submitAccount" class="primary" type="submit">Entrar</button></div></form><p class="account-hint">Ainda não tem conta? <a href="https://album-pedro-victor.vercel.app/#album" target="_blank" rel="noopener">Crie uma no álbum</a>.</p></dialog>
+  <dialog id="stickerDialog" aria-labelledby="stickerTitle"><h2 id="stickerTitle">Suas figurinhas como skin</h2><p>Escolha uma figurinha que você possui no álbum. Não gasta cópias nem altera a produção.</p><label>Buscar figurinha<input id="stickerSearch" type="search" placeholder="Nome ou número" autocomplete="off"></label><p id="stickerDialogStatus" role="status"></p><div id="stickerGrid" class="sticker-grid"></div><div class="dialog-actions"><button id="refreshStickers" class="secondary" type="button">Atualizar coleção</button><button id="closeStickers" class="primary" type="button">Fechar</button></div></dialog>
   <div id="toast" role="status" class="toast"></div>
 </body>
 </html>
