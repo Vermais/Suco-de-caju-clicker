@@ -3,7 +3,7 @@
   const C = window.CajuCore;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-30-3';
+  const gameVersion = '2026-09-30-4';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -376,7 +376,7 @@
     if (!pending || pending.until <= Date.now()) return;
     state.pendingEvent = null;
     state.nextEventAt = Date.now() + nextEventDelay();
-    const reward = C.eventReward(state, pending.id, Math.random() < .45);
+    const reward = C.eventReward(state, pending.id, Math.random() < C.GOLDEN_LUCKY_CHANCE);
     if (!reward) return;
     FX.burst($('juiceArea'), event, 18, true);
     FX.animate($('juiceCount'), [{ transform: 'scale(1.12)', color: '#ffd46c' }, { transform: 'scale(1)' }], 450);

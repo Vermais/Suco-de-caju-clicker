@@ -326,8 +326,8 @@ test('eventos respeitam banco e tempo de produção, sem premiar poder do autocl
   const reward = C.eventReward(state, 'golden', true).gain;
   state.permanentUpgrades.click = 10;
   assert.equal(C.eventReward(state, 'golden', true).gain, reward);
-  assert.equal(C.eventDelay(state, 0), 300000);
-  assert.equal(C.eventDelay(state, 1), 900000);
+  assert.equal(C.eventDelay(state, 0), 90000);
+  assert.equal(C.eventDelay(state, 1), 180000);
   assert.equal(C.eventReward(state, 'golden').boost.duration, 77000);
   assert.equal(C.eventReward(state, 'golden').boost.click, 1);
 });
@@ -475,4 +475,25 @@ test('novos buffs permanentes dão bônus condicionais e persistem após rebirth
   assert.equal(restored.permanentUpgrades.recipes,1);
   assert.equal(restored.permanentUpgrades.orchard,1);
   assert.equal(restored.permanentUpgrades.reserve,1);
+});
+
+test('buffs aparecem mais, frequência reduz intervalo e partidas antigas recebem o novo máximo', () => {
+  const state=C.newState();
+  assert.equal(C.eventDelay(state,0),90000);
+  assert.equal(C.eventDelay(state,1),180000);
+  state.permanentUpgrades.frequency=5;
+  assert.equal(C.eventDelay(state,0),56250);
+  assert.equal(C.eventDelay(state,1),112500);
+  assert.equal(C.GOLDEN_LUCKY_CHANCE,.3);
+  let buffs=0;
+  for(let i=0;i<1000;i++) {
+    const e=C.selectEvent((i+.5)/1000);
+    buffs+=e.id==='golden'?1-C.GOLDEN_LUCKY_CHANCE:C.eventReward(state,e.id).boost?1:0;
+  }
+  assert.ok(Math.abs(buffs/1000-.71)<.002);
+  const now=Date.now();
+  const restored=C.normalize({juice:123,nextEventAt:now+900000,permanentUpgrades:{frequency:5}});
+  assert.equal(restored.juice,123);
+  assert.ok(restored.nextEventAt<=Date.now()+112500);
+  assert.ok(restored.nextEventAt>=now+112500);
 });

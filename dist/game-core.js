@@ -171,6 +171,7 @@
     { id: 'breeze', icon: '🍃', name: 'Brisa da safra', lifetime: 18000 }
   ];
 
+  const GOLDEN_LUCKY_CHANCE = .3;
   const price = (building, owned) => Math.ceil(building.base * Math.pow(1.15, owned));
   function batchCost(building, owned, count) {
     if (!Number.isInteger(count) || count < 0 || count > 10000) return Infinity;
@@ -227,7 +228,7 @@
   const legacyBonus = state => 1 + earnedNuts(state) * .01;
   const offlineRate = state => Math.min(1, .4 + permanentLevel(state, 'offline') * .1);
   const offlineLimit = state => (4 + 4 * permanentLevel(state, 'offlineTime')) * 3600;
-  const eventDelay = (state, random = Math.random()) => (300000 + random * 600000) / (1 + .12 * permanentLevel(state, 'frequency'));
+  const eventDelay = (state, random = Math.random()) => (90000 + random * 90000) / (1 + .12 * permanentLevel(state, 'frequency'));
   const eventLifetime = (state, event) => event.lifetime * (1 + .2 * permanentLevel(state, 'window'));
   const starterJuice = state => permanentLevel(state, 'starter') ? 10000 * 2 ** (permanentLevel(state, 'starter') - 1) : 0;
   const starterBuildings = state => BUILDINGS.map((_, i) => {
@@ -304,7 +305,7 @@
   }
   function newState() {
     return { juice: 0, allTime: 0, runProduced: 0, owned: BUILDINGS.map(() => 0), upgrades: [], achievements: [], prestige: 0, prestigeEarned: 0, permanentUpgrades: {}, rebirths: 0, clicks: 0, skin: 'cup',
-      eventStats: Object.fromEntries(['total', ...EVENTS.map(e => e.id)].map(id => [id, 0])), claimedMissions: [], missionsCompleted: 0, pendingEvent: null, activeBoost: null, handmade: 0, nextEventAt: Date.now() + 300000, savedAt: Date.now() };
+      eventStats: Object.fromEntries(['total', ...EVENTS.map(e => e.id)].map(id => [id, 0])), claimedMissions: [], missionsCompleted: 0, pendingEvent: null, activeBoost: null, handmade: 0, nextEventAt: Date.now() + 90000, savedAt: Date.now() };
   }
   function normalize(raw) {
     const base = newState();
@@ -323,6 +324,7 @@
     const earned = Math.max(Math.floor(safe(raw.prestigeEarned ?? raw.prestige)), Math.floor(safe(raw.prestige)));
     const stats = Object.fromEntries(Object.keys(base.eventStats).map(id => [id, Math.floor(safe(raw.eventStats?.[id]))]));
     const pending = EVENTS.find(e => e.id === raw.pendingEvent?.id) && safe(raw.pendingEvent?.until) > Date.now() ? { id: raw.pendingEvent.id, until: raw.pendingEvent.until } : null;
+    const maxEventAt = Date.now() + 180000 / (1 + .12 * Math.min(5, Math.floor(safe(raw.permanentUpgrades?.frequency))));
     const boost = EVENTS.find(e => e.id === raw.activeBoost?.id) && safe(raw.activeBoost?.until) > Date.now()
       ? { id: raw.activeBoost.id, until: raw.activeBoost.until, production: Math.min(7, Math.max(1, safe(raw.activeBoost.production))), click: Math.min(7, Math.max(1, safe(raw.activeBoost.click))) } : null;
     return { ...base, juice: safe(raw.juice), allTime, runProduced: safe(raw.runProduced ?? raw.lifetime),
@@ -335,7 +337,7 @@
       claimedMissions: [...new Set(Array.isArray(raw.claimedMissions) ? raw.claimedMissions : [])].filter(id => MISSIONS.some(m => m.id === id)),
       missionsCompleted: Math.max(Math.floor(safe(raw.missionsCompleted)), new Set((Array.isArray(raw.claimedMissions) ? raw.claimedMissions : []).filter(id => MISSIONS.some(m => m.id === id))).size),
       eventStats: stats, pendingEvent: pending, activeBoost: boost,
-      nextEventAt: pending ? safe(raw.nextEventAt) || base.nextEventAt : Math.max(safe(raw.nextEventAt), raw.pendingEvent ? Date.now() + 45000 : 0) || base.nextEventAt,
+      nextEventAt: pending ? safe(raw.nextEventAt) || base.nextEventAt : Math.min(maxEventAt, Math.max(safe(raw.nextEventAt), raw.pendingEvent ? Date.now() + 45000 : 0) || base.nextEventAt),
       savedAt: safe(raw.savedAt) || Date.now() };
   }
   function rebirth(state) {
@@ -384,7 +386,7 @@
     return gain;
   }
   function selectEvent(random = Math.random()) {
-    const weights = [.4, .12, .1, .08, .07, .07, .06, .06, .04];
+    const weights = [.4, .08, .1, .08, .05, .07, .04, .1, .08];
     let accumulated = 0;
     for (let i = 0; i < EVENTS.length; i++) {
       accumulated += weights[i];
@@ -392,7 +394,7 @@
     }
     return EVENTS[EVENTS.length - 1];
   }
-  const api = { MISSIONS, progressValue, missionReward, claimMission, selectEvent, BUILDINGS, UPGRADES, ACHIEVEMENTS, EVENTS, PERMANENT_UPGRADES, permanentLevel, permanentCost, buyPermanent, earnedNuts, offlineRate, offlineLimit, eventDelay, eventLifetime, starterJuice, starterBuildings, price, batchCost, affordableCount, prestigePotential, prestigePending, prestigeCost, upgradeUnlocked, production, clickPower, eventReward, newState, normalize, rebirth };
+  const api = { GOLDEN_LUCKY_CHANCE, MISSIONS, progressValue, missionReward, claimMission, selectEvent, BUILDINGS, UPGRADES, ACHIEVEMENTS, EVENTS, PERMANENT_UPGRADES, permanentLevel, permanentCost, buyPermanent, earnedNuts, offlineRate, offlineLimit, eventDelay, eventLifetime, starterJuice, starterBuildings, price, batchCost, affordableCount, prestigePotential, prestigePending, prestigeCost, upgradeUnlocked, production, clickPower, eventReward, newState, normalize, rebirth };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CajuCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

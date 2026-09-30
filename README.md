@@ -27,7 +27,7 @@ Referência consultada: [código oficial do Cookie Clicker](https://orteil.dashn
 - Espremedores e cliques compartilham os três primeiros dobramentos (100, 500 e 10.000). Depois, a equipe integrada dá bônus por outro produtor, seguindo a linha de dedos do original.
 - Cliques começam em 1, sem fração gratuita de CpS. A linha avançada acrescenta 1% de CpS por compra, por 50 mil, 5 milhões, 500 milhões etc., desbloqueada por suco feito manualmente. Os cliques continuam sem limites ou detector de autoclicker.
 - Bônus globais entre 1% e 5%; sinergias exigem os dois produtores e progresso avançado, com preço proporcional à dupla.
-- Eventos a cada 5–15 minutos, encurtados pelo buff de frequência. O dourado dá produção ×7 por 77 segundos ou `min(saldo × 15%, CpS × 900) + 13`. Chuva e meteoro também respeitam teto pelo saldo e CpS, sem recompensas baseadas no poder de clique.
+- Eventos a cada 1,5–3 minutos, encurtados pelo buff de frequência. O dourado dá produção ×7 por 77 segundos ou `min(saldo × 15%, CpS × 900) + 13`. Chuva e meteoro também respeitam teto pelo saldo e CpS, sem recompensas baseadas no poder de clique.
 
 Saldo, produtores, castanhas e níveis dos jogadores são preservados ao carregar, mas recebem as regras novas. IDs antigos dos patamares extras 10 e 75 migram para 25 e 100, deduplicados; os três antigos dobramentos extras de espremedor migram para as três melhorias de clique, evitando contar o mesmo bônus duas vezes. `handmade` registra apenas produção de cliques na safra; salvamentos anteriores começam esse contador em zero sem remover melhorias já compradas. A antiga `prestigeBase` é descartada. Não há alteração de esquema.
 
@@ -46,8 +46,12 @@ Cliques têm partículas e movimento do copo; compras, eventos, conquistas e ren
 - 4 produtores avançados: Conselho dos cajus, Sonho engarrafado, Oceano de realidades e Cajueiro do infinito, com 60 melhorias individuais e 4 sinergias; os produtores antigos mantêm seus IDs.
 - 8 receitas novas para diferentes estágios, com +1% a +5% de produção. Total: 392 melhorias comuns.
 - 70 conquistas novas por produtor, produção, cliques, receitas, diversidade, desafios e eventos. Total: 126 conquistas.
-- 3 eventos novos: Feira do caju (prêmio limitado por saldo e CpS), Aurora do pomar (produção ×2 por 60s) e Brisa da safra (cliques ×3 por 40s). Total: 9 eventos; a frequência geral segue igual.
+- 3 eventos novos: Feira do caju (prêmio limitado por saldo e CpS), Aurora do pomar (produção ×2 por 60s) e Brisa da safra (cliques ×3 por 40s). Total: 9 eventos.
 - 3 buffs permanentes: Biblioteca ancestral (+1% por cinco melhorias comuns/nível), Raízes do sertão (+1% por dez cajueiros/nível) e Reserva de eventos (+5% de prêmios instantâneos/nível). Máximo de 3 níveis, preços 8/12/6 castanhas, crescimento ×3.
 - Nova aba Desafios com 12 objetivos por safra. Resgate único por objetivo, uma recompensa de até 60s de CpS, limitada a 2% do saldo, mínimo de 1 copo. Renascimento limpa os resgates da safra e preserva a contagem histórica de desafios. Recompensas não usam bônus temporários nem premiam castanhas diretamente.
 
 Novos campos `claimedMissions` e `missionsCompleted` ficam no JSON existente do salvamento. Partidas antigas começam sem resgates e sem alterar saldo, castanhas, buffs ou produtores. Recompensas são contabilizadas como produção na safra/histórico, mas só o saldo atual continua determinando o renascimento.
+
+## Eventos mais frequentes
+
+Intervalo base de 90–180 segundos. Estação de festas mantém sua redução de intervalo (no nível 5: 56,25–112,5 segundos). O dourado agora tem 70% de chance de buff e 30% de prêmio instantâneo. Aurora e Brisa aparecem mais; a distribuição completa dá aproximadamente 71% de eventos com buff. Não empilhamos multiplicadores: um evento novo substitui o bônus anterior. Partidas carregadas limitam o tempo restante até o próximo evento ao novo máximo, preservando saldo e eventos já visíveis.
