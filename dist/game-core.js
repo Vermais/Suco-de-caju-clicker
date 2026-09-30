@@ -117,6 +117,7 @@
     .map(([cost, bonus, name], i) => ({ id: `recipe-${i}`, name, icon: '🧃', cost, unlock: cost / 2,
       global: 1 + bonus, description: `Produção automática +${Math.round(bonus * 100)}%.` })));
 
+  UPGRADES.push(...[1e7,1e10,1e13,1e16,1e19,1e22,1e25,1e28].map((cost,i) => ({id:`collection-recipe-${i}`,name:['Caju cristalino','Néctar dourado','Garrafa celeste','Polpa astral','Reserva temporal','Sabor primordial','Brinde universal','Última receita'][i],icon:'🍶',cost,unlock:cost/2,global:1.02,description:'Produção automática +2%.'})));
   const MISSIONS = [
     { id: 'first-machine', name: 'Abra sua barraca', description: 'Tenha seu primeiro produtor.', kind: 'buildings', at: 1 },
     { id: 'team', name: 'Equipe de respeito', description: 'Tenha 25 produtores.', kind: 'buildings', at: 25 },
@@ -129,9 +130,16 @@
     { id: 'specialist', name: 'Especialista da safra', description: 'Compre 20 melhorias comuns.', kind: 'upgrades', at: 20 },
     { id: 'flow', name: 'Fluxo constante', description: 'Alcance 100 copos/s sem eventos.', kind: 'cps', at: 100 },
     { id: 'river', name: 'Rio de suco', description: 'Alcance 10 mil copos/s sem eventos.', kind: 'cps', at: 1e4 },
-    { id: 'ocean', name: 'Oceano automático', description: 'Alcance 1 milhão de copos/s sem eventos.', kind: 'cps', at: 1e6 }
+    { id: 'ocean', name: 'Oceano automático', description: 'Alcance 1 milhão de copos/s sem eventos.', kind: 'cps', at: 1e6 },
+    ...[250, 500, 1000, 2500].map((at, i) => ({ id: `expansion-team-${at}`, name: ['Cooperativa da safra','Cidade produtiva','Mil ajudantes','Confederação do caju'][i], description: `Tenha ${at} produtores nesta safra.`, kind: 'buildings', at })),
+    ...[50, 100, 200].map((at, i) => ({ id: `expansion-recipes-${at}`, name: ['Chef da safra','Receitas centenárias','Enciclopédia do sabor'][i], description: `Compre ${at} melhorias comuns nesta safra.`, kind: 'upgrades', at })),
+    ...[1e8, 1e10, 1e12].map((at, i) => ({ id: `expansion-flow-${at}`, name: ['Rio estelar','Mar galáctico','Fonte infinita'][i], description: 'Alcance ' + ['100 milhões','10 bilhões','1 trilhão'][i] + ' copos/s sem bônus temporários.', kind: 'cps', at }))
   ];
   const ACHIEVEMENTS = [
+    ...[12, 18, 22].map((at, i) => ({id:`collection-diversity-${at}`,icon:'🌈',name:['Doze sabores','Pomar universal','Todos os sabores'][i],kind:'diversity',at})),
+    ...[50, 100, 200].map((at, i) => ({id:`collection-missions-${at}`,icon:'📜',name:['Contratante veterano','Cem contratos','Mestre dos contratos'][i],kind:'missions',at})),
+    ...[1e21, 1e24, 1e30].map((at, i) => ({id:`collection-history-${at}`,icon:'🌠',name:['Memória estelar','Memória universal','Memória infinita'][i],kind:'allTime',at})),
+    ...[200, 300, 400].map((at, i) => ({id:`collection-upgrades-${at}`,icon:'📚',name:['Duzentas receitas','Biblioteca do universo','Todas as páginas'][i],kind:'upgrades',at})),
     ...[1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 1000000000000, 1000000000000000].map((at, i) => ({ id: `juice-${at}`, icon: ['🥤','🍊','🍹','🧃','🍶','🛒','🚛','🌊','🏙️','🏰','🌌','✨'][i], name: ['Primeiro gole','Dez copos','Uma jarra','Barril cheio','Vila do caju','Rio de caju','Mar de suco','Oceano de suco','Continente dourado','Lenda do caju','Além das estrelas','Caju cósmico'][i], kind: 'run', at })),
     ...[1e6, 1e9, 1e12, 1e15, 1e18].map((at, i) => ({ id: `history-${at}`, icon: ['📈','🏆','👑','🪐','♾️'][i], name: ['Um milhão na história','Bilionário do caju','Trilhão histórico','Império eterno','História infinita'][i], kind: 'allTime', at })),
     ...[1, 5, 10, 50, 100, 250, 500, 1000, 2500, 5000].map((at, i) => ({ id: `buildings-${at}`, icon: ['🔧','🧱','🧰','🏗️','🏭','🚀','👑','🌆','🌌','🌀'][i], name: ['Começando','Primeira equipe','Dez ajudantes','Linha de produção','Cem unidades','Grande empresa','Império completo','Metrópole do caju','Civilização do caju','Pomares infinitos'][i], kind: 'buildings', at })),
@@ -221,7 +229,13 @@
     { id: 'offlineTime', name: 'Reserva da madrugada', icon: '🌌', description: '+4 horas de produção ausente por nível, até 24 horas.', cost: 2, growth: 2, max: 5 },
     { id: 'recipes', name: 'Biblioteca ancestral', icon: '📚', description: '+1% de produção por 5 melhorias comuns, por nível.', cost: 8, growth: 3, max: 3 },
     { id: 'orchard', name: 'Raízes do sertão', icon: '🌵', description: '+1% de produção por 10 cajueiros, por nível.', cost: 12, growth: 3, max: 3 },
-    { id: 'reserve', name: 'Reserva de eventos', icon: '🛍️', description: 'Prêmios instantâneos de eventos +5% por nível.', cost: 6, growth: 3, max: 3 }
+    { id: 'reserve', name: 'Reserva de eventos', icon: '🛍️', description: 'Prêmios instantâneos de eventos +5% por nível.', cost: 6, growth: 3, max: 3 },
+    { id: 'apprentices', name: 'Escola de espremedores', icon: '🎓', description: 'Os 3 primeiros tipos de produtores rendem +10% por nível.', cost: 4, growth: 3, max: 3 },
+    { id: 'industry', name: 'Engenharia ancestral', icon: '🏭', description: '+2% de produção por 100 produtores, por nível; limite de +20% por nível.', cost: 10, growth: 3, max: 3 },
+    { id: 'precision', name: 'Toque de mestre', icon: '🖐️', description: 'Cliques +5% por nível, adicional a Mãos da nova safra.', cost: 4, growth: 3, max: 3 },
+    { id: 'quality', name: 'Selo da safra', icon: '🏵️', description: '+5% de produção por nível ao possuir 10 tipos de produtores.', cost: 8, growth: 3, max: 3 },
+    { id: 'contracts', name: 'Contratos eternos', icon: '📜', description: 'Prêmios de desafios usam +10% de tempo de produção por nível; continuam limitados a 2% do saldo.', cost: 6, growth: 3, max: 3 },
+    { id: 'seedlings', name: 'Mudas da próxima vida', icon: '🌱', description: 'Comece cada safra com mais 2 cajueiros e 1 cozinha por nível.', cost: 8, growth: 3, max: 3 }
   ];
   const permanentLevel = (state, id) => state.permanentUpgrades?.[id] || 0;
   const permanentCost = (state, u) => u.cost * u.growth ** permanentLevel(state, u.id);
@@ -234,7 +248,7 @@
   const starterJuice = state => permanentLevel(state, 'starter') ? 10000 * 2 ** (permanentLevel(state, 'starter') - 1) : 0;
   const starterBuildings = state => BUILDINGS.map((_, i) => {
     const level = permanentLevel(state, 'crew');
-    return i === 0 ? level * 10 : i === 1 ? level * 2 : i === 2 ? Math.floor(level / 3) : 0;
+    return i === 0 ? level * 10 : i === 1 ? level * 2 : i === 2 ? Math.floor(level / 3) + 2 * permanentLevel(state, 'seedlings') : i === 3 ? permanentLevel(state, 'seedlings') : 0;
   });
   function buyPermanent(state, id) {
     const u = PERMANENT_UPGRADES.find(item => item.id === id);
@@ -264,7 +278,7 @@
       const power = UPGRADES.reduce((m, u) => m * (u.building === b.id && bought.has(u.id) ? u.buildingMult || 1 : 1), 1);
       const synergy = UPGRADES.find(u => u.building === b.id && u.synergy !== undefined && bought.has(u.id));
       const unit = b.id === 0 ? b.cps * basicClickMultiplier(state) + fingerBonus(state) : b.cps * power;
-      return sum + state.owned[b.id] * unit * (synergy ? 1 + state.owned[synergy.synergy] * .01 : 1);
+      return sum + state.owned[b.id] * unit * (b.id < 3 ? 1 + .1 * permanentLevel(state, 'apprentices') : 1) * (synergy ? 1 + state.owned[synergy.synergy] * .01 : 1);
     }, 0);
     cps *= UPGRADES.reduce((m, u) => m * (u.global && bought.has(u.id) ? u.global : 1), 1);
     const aroma = state.achievements.length * .04 * (1 + permanentLevel(state, 'milk') * .2);
@@ -273,12 +287,14 @@
     cps *= 1 + state.owned.filter(count => count > 0).length * .005 * permanentLevel(state, 'synergy');
     cps *= 1 + Math.floor(state.upgrades.length / 5) * .01 * permanentLevel(state, 'recipes');
     cps *= 1 + Math.floor(state.owned[2] / 10) * .01 * permanentLevel(state, 'orchard');
+    cps *= 1 + Math.min(10, Math.floor(state.owned.reduce((a,b) => a + b, 0) / 100)) * .02 * permanentLevel(state, 'industry');
+    cps *= 1 + (state.owned.filter(n => n > 0).length >= 10 ? .05 * permanentLevel(state, 'quality') : 0);
     return cps * boostMultiplier(timed);
   }
   function clickPower(state, timed = false, productionTimed = false) {
     const fraction = .001 * permanentLevel(state, 'clickCps') + UPGRADES.reduce((sum, u) => sum + (state.upgrades.includes(u.id) ? u.clickCps || 0 : 0), 0);
     return (basicClickMultiplier(state) + fingerBonus(state) + production(state, productionTimed) * fraction)
-      * (1 + .1 * permanentLevel(state, 'click')) * boostMultiplier(timed);
+      * (1 + .1 * permanentLevel(state, 'click')) * (1 + .05 * permanentLevel(state, 'precision')) * boostMultiplier(timed);
   }
   function baseEventReward(state, id, lucky = false) {
     if (id === 'golden') return lucky
@@ -376,7 +392,7 @@
     if (goal.kind === 'clicks') return state.clicks;
     return goal.kind === 'rebirths' ? state.rebirths : 0;
   }
-  const missionReward = (state, cps = production(state)) => Math.max(1, Math.floor(Math.min(state.juice * .02, Math.max(1, cps) * 60)));
+  const missionReward = (state, cps = production(state)) => Math.max(1, Math.floor(Math.min(state.juice * .02, Math.max(1, cps) * 60 * (1 + .1 * permanentLevel(state, 'contracts')))));
   function claimMission(state, id) {
     const mission = MISSIONS.find(m => m.id === id);
     if (!mission || state.claimedMissions.includes(id) || progressValue(state, mission) < mission.at) return false;

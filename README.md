@@ -58,8 +58,17 @@ Intervalo base de 90–180 segundos. Estação de festas mantém sua redução d
 
 ## Skins de figurinhas do álbum
 
-“Minhas figurinhas” consulta somente `album_progress.owned` da conta autenticada, protegida pela política de leitura do próprio usuário. O seletor mostra exclusivamente IDs com cópias positivas, permite buscar nome/número e verifica novamente a coleção ao equipar. A coleção é atualizada a cada 45 segundos com a página visível, ao voltar à página e ao abrir o seletor. Skins não gastam cópias nem alteram ganhos.
+“Minhas figurinhas” consulta somente `album_progress.owned` da conta autenticada, protegida pela política de leitura do próprio usuário. O seletor mostra exclusivamente IDs com cópias positivas, permite buscar nome/número e verifica novamente a coleção ao equipar. A coleção é atualizada a cada 45 segundos com a página visível, ao voltar à página e ao abrir o seletor. Skins não gastam cópias. O bônus de produção depende da ativação temporária descrita abaixo.
 
 `state.skin` aceita os modelos existentes e `sticker:1` até `sticker:111`, persiste no salvamento e no renascimento. O RPC de salvamento verifica a posse usando `auth.uid()`; figurinhas inexistentes ou sem posse voltam ao copo, preservando o restante do progresso. Sua resposta informa a skin efetivamente salva. Imagens e nomes usam o catálogo original do álbum. A migration `20260930111621_clicker_owned_sticker_skins.sql` foi aplicada no Supabase compartilhado.
 
 Execute `node --test --test-isolation=none tests/*.test.js` para verificar todas as regras, sincronização e skins.
+
+
+## Buffs de figurinhas e expansão — versão 2026-09-30-6
+
+Multiplicadores de produção: comum 1,05×; incomum 1,10×; rara 1,20×; épica 1,35×; mítica 1,50×; lendária 1,75×; secreta 1,90×; supersecreta 2×. Os IDs de raridade seguem o catálogo original do álbum. Botão de ativação exige login e skin da coleção. O efeito dura 10 minutos corridos, depois há 30 minutos de cooldown, ou 40 minutos entre ativações. Trocar de skin pausa o efeito sem pausar o relógio. Uma única espera por conta impede alternar figurinhas para ativar novamente. Recarregar, sair, renascer ou outro dispositivo preserva os tempos.
+
+A tabela `clicker_sticker_buffs` tem RLS e leitura exclusiva do dono, sem escrita direta do cliente. RPCs autenticados validam posse com `auth.uid()` e usam lock por conta para impedir ativações simultâneas. Nenhum pacote/cópia é consumido. Tempos vêm do servidor e avançam com relógio monotônico no navegador. Polling atualiza posse e disponibilidade; ganho ausente, prêmios instantâneos e metas de CpS usam produção base, evitando bônus retroativo. Eventos multiplicam o bônus durante a produção ativa. O clique básico não recebe multiplicador da figurinha; a parcela de CpS das melhorias acompanha a produção ampliada.
+
+Conteúdo adicional: 6 buffs permanentes (Escola de espremedores, Engenharia ancestral, Toque de mestre, Selo da safra, Contratos eternos e Mudas da próxima vida), 8 receitas de +2%, 10 desafios por safra e 12 conquistas. Totais: 21 buffs permanentes, 400 melhorias comuns, 22 desafios e 138 conquistas. Novos buffs custam 4–10 castanhas inicialmente, preço ×3 por nível e máximo de 3 níveis. Engenharia limita o bônus a +20% por nível; contratos preservam o teto de 2% do saldo. Nenhuma compra é concedida automaticamente aos saves antigos.

@@ -166,6 +166,15 @@
     const owned = rows?.[0]?.owned;
     return owned && typeof owned === 'object' && !Array.isArray(owned) ? owned : {};
   }
+  async function stickerBuff(cardId = null) {
+    const userId = session?.user?.id;
+    if (!userId) throw new Error('Entre com sua conta do álbum.');
+    const result = await request('/rest/v1/rpc/' + (cardId === null ? 'get_clicker_sticker_buff' : 'activate_clicker_sticker_buff'), {
+      method: 'POST', body: JSON.stringify(cardId === null ? {} : {p_card_id: cardId})
+    });
+    if (session?.user?.id !== userId) throw new Error('A conta mudou.');
+    return result;
+  }
   function logout() {
     session = null; revision = 0; queued = null; conflict = false; loadedUser = null;
     clearTimeout(timer);
@@ -194,6 +203,6 @@
       } catch (_) { localStorage.removeItem(STORAGE); }
     }
   }
-  window.CajuCloud = { init, login, logout, queueSave, flush, claimRebirth, leaderboard, ownedStickers,
+  window.CajuCloud = { init, login, logout, queueSave, flush, claimRebirth, leaderboard, ownedStickers, stickerBuff,
     get user() { return session?.user || null; }, get mode() { return session?.mode || 'guest'; } };
 })();

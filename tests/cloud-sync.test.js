@@ -61,6 +61,11 @@ test('coleção usa apenas conta atual e correção de skin mantém o saldo', as
         if(delay) await new Promise(resolve=>{pendingCollection=resolve;});
         return response([{owned:{3:1,5:0}}]);
       }
+      if(url.endsWith('/rest/v1/rpc/get_clicker_sticker_buff')) return response({cardId:3,until:1000,readyAt:2000,serverNow:500,owned:true});
+      if(url.endsWith('/rest/v1/rpc/activate_clicker_sticker_buff')) {
+        assert.equal(JSON.parse(options.body).p_card_id,3);
+        return response({cardId:3,until:600500,readyAt:2400500,serverNow:500,owned:true});
+      }
       if(url.endsWith('/rest/v1/rpc/save_clicker_progress')) {
         const payload=JSON.parse(options.body);
         assert.equal(payload.p_state.juice,300);
@@ -77,6 +82,8 @@ test('coleção usa apenas conta atual e correção de skin mantém o saldo', as
   await cloud.login('test@example.com','test-password');
   assert.equal((await cloud.ownedStickers())[3],1);
   assert.match(requestedCollection,/user_id=eq.current-user&select=owned&limit=1$/);
+  assert.equal((await cloud.stickerBuff()).cardId,3);
+  assert.equal((await cloud.stickerBuff(3)).readyAt,2400500);
   cloud.queueSave({juice:300,skin:'sticker:5'});
   assert.equal(await cloud.flush(),true);
   assert.deepEqual(correction,['cup','sticker:5']);

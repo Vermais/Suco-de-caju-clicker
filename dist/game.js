@@ -4,7 +4,7 @@
   const S = window.CajuStickers;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-30-5';
+  const gameVersion = '2026-09-30-6';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -19,6 +19,54 @@
   let stickerUser = null;
   let stickerRequest = 0;
   let stickerLoading = false;
+  let stickerBuff = null;
+  let buffReceivedAt = 0;
+  let buffUser = null;
+  let buffRequest = 0;
+  let buffBusy = false;
+  const buffNow = () => stickerBuff ? stickerBuff.serverNow + performance.now() - buffReceivedAt : Date.now();
+  const skinMultiplier = () => cloud.user?.id === stickerUser && buffUser === cloud.user?.id
+    ? S.buffMultiplier(stickerBuff, state.skin, stickerOwned, buffNow()) : 1;
+  const productionMultiplier = () => (currentBoost()?.production || 1) * skinMultiplier();
+  const remainingTime = ms => { const seconds = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0'); };
+  async function syncStickerBuff(cardId = null) {
+    if (cardId === null && buffBusy) return false;
+    const userId = cloud.user?.id;
+    if (!userId) return false;
+    const requestId = ++buffRequest;
+    if (cardId !== null) buffBusy = true;
+    renderBuff();
+    try {
+      const result = await cloud.stickerBuff(cardId);
+      if (requestId !== buffRequest || cloud.user?.id !== userId) return false;
+      stickerBuff = result; buffReceivedAt = performance.now(); buffUser = userId;
+      if (cardId !== null) toast('Buff de figurinha ativado por 10 minutos!');
+      return true;
+    } catch (error) {
+      if (cardId !== null) toast(error.message);
+      return false;
+    } finally {
+      if (requestId === buffRequest) { buffBusy = false; renderBuff(); }
+    }
+  }
+  function renderBuff() {
+    const button = $('activateStickerBuff');
+    const status = $('stickerBuffStatus');
+    const card = S.cardForSkin(state.skin);
+    const eligible = cloud.user?.id === stickerUser && card && S.hasOwned(stickerOwned, card.id);
+    const now = buffNow();
+    button.disabled = !eligible || buffBusy || buffUser !== cloud.user?.id || stickerBuff?.readyAt > now;
+    button.textContent = eligible ? `Ativar buff ${String(card.multiplier).replace('.', ',')}× · ${card.rarityName}` : 'Ativar buff da figurinha';
+    if (buffBusy) status.textContent = 'Ativando no servidor…';
+    else if (stickerBuff?.until > now && buffUser === cloud.user?.id) {
+      status.textContent = stickerBuff.owned === false ? 'Figurinha fora da coleção: bônus indisponível. O cooldown continua.' : skinMultiplier() > 1
+        ? `Produção ${String(skinMultiplier()).replace('.', ',')}× · termina em ${remainingTime(stickerBuff.until - now)}`
+        : `Buff pausado: equipe a figurinha #${stickerBuff.cardId}. Tempo restante: ${remainingTime(stickerBuff.until - now)}.`;
+    } else if (stickerBuff?.readyAt > now && buffUser === cloud.user?.id) status.textContent = `Próximo buff em ${remainingTime(stickerBuff.readyAt - now)}. A espera é compartilhada por todas as skins.`;
+    else if (!eligible) status.textContent = 'Equipe uma figurinha da sua coleção para usar seu buff.';
+    else if (buffUser !== cloud.user?.id) status.textContent = 'Conferindo disponibilidade do buff…';
+    else status.textContent = '10 min de efeito + 30 min de cooldown. Bônus de produção combina com eventos; não aumenta o clique básico.';
+  }
   function renderStickerGrid() {
     const grid = $('stickerGrid');
     grid.replaceChildren();
@@ -31,7 +79,7 @@
       button.classList.toggle('selected', state.skin === 'sticker:' + card.id);
       button.setAttribute('aria-pressed', String(state.skin === 'sticker:' + card.id));
       const image = document.createElement('img'); image.src = card.image; image.alt = ''; image.loading = 'lazy'; image.draggable = false;
-      const label = document.createElement('span'); label.textContent = `#${card.id} · ${card.name}`;
+      const label = document.createElement('span'); label.textContent = `#${card.id} · ${card.name} · ${card.rarityName} · ${String(card.multiplier).replace('.', ',')}×`;
       button.append(image, label);
       button.addEventListener('click', async () => {
         button.disabled = true;
@@ -64,6 +112,7 @@
       }
       $('stickerStatus').textContent = `${S.ownedCards(owned).length} figurinhas da sua conta disponíveis como skin.`;
       render(); if ($('stickerDialog').open) renderStickerGrid();
+      syncStickerBuff();
       return true;
     } catch (_) {
       if (requestId === stickerRequest) {
@@ -150,7 +199,7 @@
   }
   cloud.init({
     authorized({ user, state: remote, newAccount, mode }) {
-      if (stickerUser !== user.id) { stickerRequest++; stickerOwned = {}; stickerUser = null; }
+      if (stickerUser !== user.id) { stickerRequest++; stickerOwned = {}; stickerUser = null; buffRequest++; stickerBuff = null; buffUser = null; buffBusy = false; }
       if (remote && !remote.rebirths) localStorage.removeItem(pendingRewardKey(user.id));
       let cache = null;
       try { cache = JSON.parse(localStorage.getItem(userSaveKey(user.id))); } catch (_) {}
@@ -176,6 +225,7 @@
     },
     signedOut() {
       stickerRequest++; stickerOwned = {}; stickerUser = null; stickerLoading = false;
+      buffRequest++; stickerBuff = null; buffUser = null; buffBusy = false;
       $('stickerDialog').close();
       $('stickerStatus').textContent = 'Entre com a conta do álbum para usar suas figurinhas.';
       let guest = null;
@@ -371,10 +421,11 @@
       button.classList.toggle('selected', selected);
       button.setAttribute('aria-pressed', String(selected));
     });
+    renderBuff();
     $('juiceCount').textContent = format(state.juice);
     const boost = currentBoost();
-    $('cps').textContent = precise(C.production(state, boost?.production || 1));
-    $('clickValue').textContent = format(C.clickPower(state, boost?.click || 1, boost?.production || 1));
+    $('cps').textContent = precise(C.production(state, productionMultiplier()));
+    $('clickValue').textContent = format(C.clickPower(state, boost?.click || 1, productionMultiplier()));
     $('runTotal').textContent = format(state.runProduced);
     $('allTime').textContent = format(state.allTime);
     $('ownedTotal').textContent = format(state.owned.reduce((a,b) => a+b,0)) + ' unidades';
@@ -434,7 +485,7 @@
   }
   $('juiceButton').addEventListener('click', event => {
     const boost = currentBoost();
-    const gain = C.clickPower(state, boost?.click || 1, boost?.production || 1);
+    const gain = C.clickPower(state, boost?.click || 1, productionMultiplier());
     earn(gain); state.clicks++; state.handmade += gain;
     floatText('+' + format(gain), event);
     FX.click($('juiceButton'), $('juiceArea'), event);
@@ -449,6 +500,11 @@
     if (!cloud.user) return;
     $('stickerSearch').value = ''; $('stickerDialog').showModal();
     renderStickerGrid(); refreshStickers();
+  });
+  $('activateStickerBuff').addEventListener('click', async () => {
+    const card = S.cardForSkin(state.skin);
+    if (!card || buffBusy || !cloud.user) return;
+    await syncStickerBuff(card.id); render();
   });
   $('closeStickers').addEventListener('click', () => $('stickerDialog').close());
   $('refreshStickers').addEventListener('click', refreshStickers);
@@ -582,7 +638,7 @@
     const dt = Math.min(.25, Math.max(0, (now - lastFrame) / 1000));
     lastFrame = now;
     if (!document.hidden) {
-      earn(C.production(state, currentBoost(current)?.production || 1) * dt);
+      earn(C.production(state, productionMultiplier()) * dt);
       if (state.activeBoost && state.activeBoost.until <= current) { state.activeBoost = null; save(); }
       if (state.pendingEvent && state.pendingEvent.until <= current) {
         state.pendingEvent = null;

@@ -244,8 +244,8 @@ test('equipe inicial é entregue após rebirth e persiste sem produção gratuit
 
 test('novos produtores têm custos e produção crescentes, melhorias e sinergias reais', () => {
   assert.equal(C.BUILDINGS.length, 22);
-  assert.equal(C.PERMANENT_UPGRADES.length, 15);
-  assert.equal(new Set(C.PERMANENT_UPGRADES.map(u => u.id)).size, 15);
+  assert.equal(C.PERMANENT_UPGRADES.length, 21);
+  assert.equal(new Set(C.PERMANENT_UPGRADES.map(u => u.id)).size, 21);
   for (let i = 1; i < C.BUILDINGS.length; i++) {
     assert.ok(C.BUILDINGS[i].base > C.BUILDINGS[i-1].base);
     assert.ok(C.BUILDINGS[i].cps > C.BUILDINGS[i-1].cps);

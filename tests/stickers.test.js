@@ -30,3 +30,21 @@ test('figurinha permanece equipada depois do renascimento', () => {
   assert.equal(C.rebirth(state),5);
   assert.equal(state.skin,'sticker:3');
 });
+
+test('raridades seguem o álbum e supersecreta tem teto de 2×', () => {
+  assert.equal(S.cardForSkin('sticker:111').rarity,'supersecret');
+  assert.equal(S.cardForSkin('sticker:111').multiplier,2);
+  const levels=Object.values(S.rarities).map(r=>r[1]);
+  assert.deepEqual(levels,[1.05,1.1,1.2,1.35,1.5,1.75,1.9,2]);
+  assert.ok(S.cards.every(c=>c.multiplier>=1.05 && c.multiplier<=2));
+});
+test('buff exige skin equipada e posse e termina no instante correto', () => {
+  const buff={cardId:111,until:10000,readyAt:1810000,owned:true};
+  assert.equal(S.buffMultiplier(buff,'sticker:111',{111:1},9999),2);
+  assert.equal(S.buffMultiplier(buff,'sticker:111',{111:1},10000),1);
+  assert.equal(S.buffMultiplier(buff,'sticker:3',{3:1,111:1},100),1);
+  assert.equal(S.buffMultiplier(buff,'cup',{111:1},100),1);
+  assert.equal(S.buffMultiplier(buff,'sticker:111',{111:0},100),1);
+  assert.equal(S.buffMultiplier({...buff,owned:false},'sticker:111',{111:1},100),1);
+  assert.equal(S.buffMultiplier({...buff,multiplier:1000},'sticker:111',{111:1},100),2);
+});
