@@ -4,7 +4,7 @@
   const S = window.CajuStickers;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-30-6';
+  const gameVersion = '2026-09-30-7';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -124,6 +124,7 @@
     }
   }
   let buyMode = '1';
+  let pedroLeftHand = false;
   let lastFrame = performance.now();
   let lastUi = 0;
   let lastUpgradeSignature = null;
@@ -411,9 +412,10 @@
     $('openStickers').disabled = !cloud.user;
     $('openStickers').classList.toggle('selected', !!sticker);
     const skinImage = $('skinImage');
-    const skinSource = sticker ? sticker.image : pedroSkin ? './pedro-67.svg' : './caju.webp';
+    const skinSource = sticker ? sticker.image : pedroSkin ? (pedroLeftHand ? './pedro-67-left.webp' : './pedro-67-right.webp') : './caju.webp';
     if (skinImage.getAttribute('src') !== skinSource) skinImage.setAttribute('src', skinSource);
     $('juiceButton').classList.toggle('pedro-skin', pedroSkin);
+    $('juiceButton').dataset.pedroPose = pedroSkin ? (pedroLeftHand ? '6' : '7') : '';
     $('juiceButton').classList.toggle('sticker-skin', !!sticker);
     $('juiceButton').setAttribute('aria-label', sticker ? sticker.name + ': preparar suco de caju' : pedroSkin ? 'Pedro Victor fazendo 6 7: preparar suco de caju' : 'Preparar suco de caju');
     document.querySelectorAll('[data-skin]').forEach(button => {
@@ -484,6 +486,7 @@
     setTimeout(() => element.remove(), 850);
   }
   $('juiceButton').addEventListener('click', event => {
+    if (state.skin === 'pedro67') pedroLeftHand = !pedroLeftHand;
     const boost = currentBoost();
     const gain = C.clickPower(state, boost?.click || 1, productionMultiplier());
     earn(gain); state.clicks++; state.handmade += gain;
@@ -493,6 +496,7 @@
   });
   document.querySelectorAll('[data-skin]').forEach(button => button.addEventListener('click', () => {
     state.skin = button.dataset.skin;
+    pedroLeftHand = false;
     FX.animate($('juiceButton'), [{ opacity: .2, transform: 'scale(.85)' }, { opacity: 1, transform: 'scale(1)' }], 450);
     render(); save();
   }));
