@@ -4,7 +4,7 @@
   const S = window.CajuStickers;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-30-8';
+  const gameVersion = '2026-09-30-9';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -136,6 +136,11 @@
     }
     button.classList.toggle('pedro-moving', state.skin === 'pedro67' && motion.moving);
     button.dataset.pedroStart = motion.initialLeft ? '6' : '7';
+    const cycle = motion.cycleMs + 'ms';
+    if (button.style.getPropertyValue('--pedro-cycle') !== cycle) {
+      button.style.setProperty('--pedro-cycle', cycle);
+      button.style.setProperty('--pedro-half-cycle', (-motion.cycleMs / 2) + 'ms');
+    }
     button.dataset.pedroPose = state.skin === 'pedro67' ? (motion.left ? '6' : '7') : '';
     return motion;
   }

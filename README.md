@@ -85,3 +85,7 @@ Assets finais: `dist/pedro-67-left.webp` e `dist/pedro-67-right.webp`. Criação
 Cliques espaçados continuam alternando as mãos imediatamente. Em rajadas com intervalos menores que 120 ms, duas imagens sobrepostas alternam no compositor do navegador, com 120 ms por pose, sem reiniciar o ciclo a cada clique. O movimento permanece até 240 ms após o último clique. Isso evita o congelamento por pares de cliques entre quadros da tela e não exige decodificar/trocar arquivos em cada entrada. A preferência de movimento reduzido usa as poses estáticas atualizadas pelo relógio visual.
 
 Todos os cliques seguem aplicando ganhos e contadores individualmente. Só os números flutuantes, partículas e a atualização completa da interface são agrupados em janelas de 50 ms para reduzir trabalho no navegador. Não existe detector, bloqueio nem limite de cliques ou ganhos. O relógio é testado com 1.000 entradas em intervalos simulados de 1 ms, incluindo parada, retomada e reset de skin.
+
+## Gesto suave e números sincronizados — versão 2026-09-30-9
+
+Rajadas usam um ciclo visual estável de 360–420 ms, com transição curta entre as poses e balanço discreto. O 6 sobe junto da mão à esquerda da imagem e o 7 junto da mão à direita, com o mesmo relógio e deslocamento de fase. Cliques espaçados alternam imediatamente. Preferência por movimento reduzido respeitada; contabilização dos cliques continua sem limites.

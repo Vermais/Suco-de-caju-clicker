@@ -70,14 +70,26 @@ dialog[open]{animation:dialogIn .24s ease-out}
 /* As mãos do Pedro alternam apenas em resposta a cada clique. */
 .juice-button.pedro-skin img{animation:none;width:min(100%,330px);height:100%;object-fit:contain}
 
-/* Duas poses já decodificadas, animadas no compositor em rajadas rápidas. */
+/* Poses e números compartilham o ciclo: a rajada nunca reinicia o gesto. */
 .pedro-frames{display:none;position:absolute;inset:0;pointer-events:none}
 .juice-button.pedro-moving #skinImage{visibility:hidden}
-.juice-button.pedro-skin.pedro-moving .pedro-frames{display:block}
-.juice-button.pedro-skin .pedro-frames img{position:absolute;inset:0;margin:auto;will-change:opacity;animation-duration:240ms;animation-timing-function:steps(1,end);animation-iteration-count:infinite}
+.juice-button.pedro-skin.pedro-moving .pedro-frames{display:block;animation:pedroSway var(--pedro-cycle,420ms) ease-in-out infinite}
+.juice-button.pedro-skin .pedro-frames img{position:absolute;inset:0;margin:auto;will-change:opacity;animation-duration:var(--pedro-cycle,420ms);animation-timing-function:linear;animation-iteration-count:infinite}
 .juice-button.pedro-skin.pedro-moving .pedro-frame-left{animation-name:pedroLeft}
 .juice-button.pedro-skin.pedro-moving .pedro-frame-right{animation-name:pedroRight}
-.juice-button.pedro-moving[data-pedro-start="7"] .pedro-frames img{animation-delay:-120ms}
-@keyframes pedroLeft{0%,100%{opacity:1}50%{opacity:0}}
-@keyframes pedroRight{0%,100%{opacity:0}50%{opacity:1}}
+.juice-button.pedro-moving[data-pedro-start="7"] .pedro-frames img,
+.juice-button.pedro-moving[data-pedro-start="7"] .pedro-numbers span{animation-delay:var(--pedro-half-cycle,-210ms)}
+@keyframes pedroLeft{0%,44%,100%{opacity:1}50%,94%{opacity:0}}
+@keyframes pedroRight{0%,44%,100%{opacity:0}50%,94%{opacity:1}}
+@keyframes pedroSway{0%,100%{transform:translateY(0) rotate(-.7deg)}25%,75%{transform:translateY(-3px)}50%{transform:translateY(0) rotate(.7deg)}}
+.pedro-numbers{display:none;position:absolute;inset:0;pointer-events:none;z-index:4}
+.pedro-skin .pedro-numbers{display:block}
+.pedro-numbers span{position:absolute;top:34%;font:900 clamp(2rem,5vw,3.2rem) Fraunces,Georgia,serif;color:#ffcf65;text-shadow:0 3px 0 #563015,0 0 18px #ffb53388;opacity:.25;transform:translateY(12px) scale(.82);transition:transform 150ms cubic-bezier(.2,.8,.3,1),opacity 120ms}
+.pedro-six{left:8%}.pedro-seven{right:8%}
+.pedro-skin[data-pedro-pose="6"] .pedro-six,.pedro-skin[data-pedro-pose="7"] .pedro-seven{opacity:1;transform:translateY(-22px) scale(1.12)}
+.pedro-moving .pedro-numbers span{animation-duration:var(--pedro-cycle,420ms);animation-timing-function:ease-in-out;animation-iteration-count:infinite;will-change:transform,opacity;transition:none}
+.pedro-moving .pedro-six{animation-name:pedroSix}
+.pedro-moving .pedro-seven{animation-name:pedroSeven}
+@keyframes pedroSix{0%,44%,100%{opacity:1;transform:translateY(-22px) scale(1.12)}50%,94%{opacity:.25;transform:translateY(12px) scale(.82)}}
+@keyframes pedroSeven{0%,44%,100%{opacity:.25;transform:translateY(12px) scale(.82)}50%,94%{opacity:1;transform:translateY(-22px) scale(1.12)}}
 @media(prefers-reduced-motion:reduce){.juice-button.pedro-moving #skinImage{visibility:visible}.juice-button.pedro-skin.pedro-moving .pedro-frames{display:none}}

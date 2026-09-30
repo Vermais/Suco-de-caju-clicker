@@ -2,20 +2,24 @@
 (function(root) {
   'use strict';
   function create() {
-    const step = 120;
+    const burstGap = 160;
+    let cycleMs = 420;
     let left = false, initialLeft = false, moving = false;
     let lastClick = -Infinity, startedAt = 0, until = 0;
     function view(now) {
       if (moving) {
-        left = initialLeft !== (Math.floor((Math.min(now, until) - startedAt) / step) % 2 === 1);
+        left = initialLeft !== (Math.floor((Math.min(now, until) - startedAt) / (cycleMs / 2)) % 2 === 1);
         if (now >= until) moving = false;
       }
-      return {left, moving, initialLeft};
+      return {left, moving, initialLeft, cycleMs};
     }
     function click(now) {
       view(now);
-      if (now - lastClick < step) {
-        if (!moving) { left = !left; initialLeft = left; startedAt = now; moving = true; }
+      if (now - lastClick < burstGap) {
+        if (!moving) {
+          cycleMs = now - lastClick <= 12 ? 360 : 420;
+          left = !left; initialLeft = left; startedAt = now; moving = true;
+        }
         until = now + 240;
       } else if (!moving) left = !left;
       lastClick = now;

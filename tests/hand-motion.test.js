@@ -33,3 +33,18 @@ test('parar, retomar ou trocar de skin libera o relógio visual corretamente', (
   assert.equal(motion.view(502).left, false);
   assert.equal(motion.view(502).moving, false);
 });
+
+test('ritmo da rajada fica estável e os números usam a mesma fase das mãos', () => {
+  for (const gap of [1, 40, 120]) {
+    const motion = create();
+    motion.click(0);
+    const start = motion.click(gap);
+    assert.equal(start.cycleMs, gap === 1 ? 360 : 420);
+    assert.equal(motion.view(gap + start.cycleMs / 2).left, !start.initialLeft);
+    for (let t = gap + 1; t < gap + 800; t += gap) {
+      const phase = motion.click(t);
+      assert.equal(phase.cycleMs, start.cycleMs);
+      assert.equal(phase.initialLeft, start.initialLeft);
+    }
+  }
+});
