@@ -3,7 +3,7 @@
   const C = window.CajuCore;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-29-9';
+  const gameVersion = '2026-09-30-1';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -288,7 +288,7 @@
     $('prestigeTotal').textContent = format(state.prestige);
     $('prestigeBonus').textContent = '+' + format(C.earnedNuts(state)) + '%';
     $('prestigePending').textContent = format(pending);
-    $('nextPrestige').textContent = format(Math.max(0, C.prestigeCost(state, pending + 1) - state.runProduced));
+    $('nextPrestige').textContent = format(Math.max(0, C.prestigeCost(state, pending + 1) - state.juice));
     $('rebirthCount').textContent = format(state.rebirths);
     $('rebirthButton').disabled = pending < 1;
     $('rebirthButton').textContent = pending ? `Renascer e ganhar ${format(pending)} 🌰` : 'Renascer (ainda sem castanhas)';

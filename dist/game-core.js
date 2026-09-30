@@ -113,20 +113,19 @@
     }
     return low;
   }
-  // Produção acumulada, mesmo depois de gastar. Cinco níveis por bilhão inicial.
-  const prestigeThreshold = level => level <= 0 ? 0 : Math.max(1e9, 1e9 * level ** 3 / 125);
-  const prestigePotential = produced => produced < 1e9 ? 0 : Math.floor(5 * Math.cbrt(produced / 1e9));
-  const prestigeProgress = state => (state.prestigeBase ?? prestigeThreshold(earnedNuts(state))) + state.runProduced;
+  // Castanhas usam somente o saldo atual. O total já conquistado encarece novos níveis.
+  const prestigePotential = balance => Math.floor(5 * Math.cbrt(Math.max(0, balance) / 1e9));
   function prestigeCost(state, count = 1) {
-    return Math.max(0, prestigeThreshold(earnedNuts(state) + count) - (state.prestigeBase ?? prestigeThreshold(earnedNuts(state))));
+    const earned = earnedNuts(state);
+    const cost = 8e6 * count * (3 * earned ** 2 + 3 * earned * count + count ** 2);
+    return earned === 0 ? Math.max(1e9, cost) : cost;
   }
   function prestigePending(state) {
     let low = 0;
-    const total = prestigeProgress(state);
-    let high = Math.min(Number.MAX_SAFE_INTEGER, prestigePotential(total) + 1);
+    let high = Math.min(Number.MAX_SAFE_INTEGER, prestigePotential(state.juice) + 1);
     while (low < high) {
       const mid = low + Math.ceil((high - low) / 2);
-      if (prestigeThreshold(earnedNuts(state) + mid) <= total) low = mid;
+      if (prestigeCost(state, mid) <= state.juice) low = mid;
       else high = mid - 1;
     }
     return low;
@@ -209,7 +208,7 @@
     return reward;
   }
   function newState() {
-    return { juice: 0, allTime: 0, runProduced: 0, prestigeBase: 0, owned: BUILDINGS.map(() => 0), upgrades: [], achievements: [], prestige: 0, prestigeEarned: 0, permanentUpgrades: {}, rebirths: 0, clicks: 0, skin: 'cup',
+    return { juice: 0, allTime: 0, runProduced: 0, owned: BUILDINGS.map(() => 0), upgrades: [], achievements: [], prestige: 0, prestigeEarned: 0, permanentUpgrades: {}, rebirths: 0, clicks: 0, skin: 'cup',
       eventStats: { total: 0, golden: 0, rain: 0, rush: 0, festival: 0, meteor: 0, harvest: 0 }, pendingEvent: null, activeBoost: null, nextEventAt: Date.now() + 65000, savedAt: Date.now() };
   }
   function normalize(raw) {
@@ -225,12 +224,11 @@
     const boost = EVENTS.find(e => e.id === raw.activeBoost?.id) && safe(raw.activeBoost?.until) > Date.now()
       ? { id: raw.activeBoost.id, until: raw.activeBoost.until, production: Math.min(7, Math.max(1, safe(raw.activeBoost.production))), click: Math.min(7, Math.max(1, safe(raw.activeBoost.click))) } : null;
     return { ...base, juice: safe(raw.juice), allTime, runProduced: safe(raw.runProduced ?? raw.lifetime),
-      prestigeBase: raw.prestigeBase === undefined ? prestigeThreshold(earned) : safe(raw.prestigeBase),
       owned: BUILDINGS.map((_, i) => Math.max(0, Math.floor(safe(raw.owned?.[i])))),
       upgrades: [...new Set(mapped)].filter(id => UPGRADES.some(u => u.id === id)),
       achievements: [...new Set(Array.isArray(raw.achievements) ? raw.achievements : [])].filter(id => ACHIEVEMENTS.some(a => a.id === id)),
       prestige: Math.floor(safe(raw.prestige)), rebirths: Math.floor(safe(raw.rebirths)), clicks: Math.floor(safe(raw.clicks)), skin: raw.skin === 'pedro67' ? 'pedro67' : 'cup',
-      prestigeEarned: Math.max(Math.floor(safe(raw.prestigeEarned ?? raw.prestige)), Math.floor(safe(raw.prestige))),
+      prestigeEarned: earned,
       permanentUpgrades: Object.fromEntries(PERMANENT_UPGRADES.map(u => [u.id, Math.min(u.max, Math.floor(safe(raw.permanentUpgrades?.[u.id])))])),
       eventStats: stats, pendingEvent: pending, activeBoost: boost,
       nextEventAt: pending ? safe(raw.nextEventAt) || base.nextEventAt : Math.max(safe(raw.nextEventAt), raw.pendingEvent ? Date.now() + 45000 : 0) || base.nextEventAt,
@@ -239,7 +237,7 @@
   function rebirth(state) {
     const pending = prestigePending(state);
     if (!pending) return false;
-    state.prestigeBase = prestigeProgress(state);
+    delete state.prestigeBase;
     state.prestige += pending;
     state.prestigeEarned = (state.prestigeEarned ?? state.prestige - pending) + pending;
     state.rebirths++;
@@ -253,7 +251,7 @@
     state.nextEventAt = Date.now() + eventDelay(state, 0);
     return pending;
   }
-  const api = { BUILDINGS, UPGRADES, ACHIEVEMENTS, EVENTS, PERMANENT_UPGRADES, permanentLevel, permanentCost, buyPermanent, earnedNuts, offlineRate, offlineLimit, eventDelay, eventLifetime, starterJuice, starterBuildings, price, batchCost, affordableCount, prestigePotential, prestigeProgress, prestigePending, prestigeCost, upgradeUnlocked, production, clickPower, eventReward, newState, normalize, rebirth };
+  const api = { BUILDINGS, UPGRADES, ACHIEVEMENTS, EVENTS, PERMANENT_UPGRADES, permanentLevel, permanentCost, buyPermanent, earnedNuts, offlineRate, offlineLimit, eventDelay, eventLifetime, starterJuice, starterBuildings, price, batchCost, affordableCount, prestigePotential, prestigePending, prestigeCost, upgradeUnlocked, production, clickPower, eventReward, newState, normalize, rebirth };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.CajuCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

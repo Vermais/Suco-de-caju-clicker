@@ -110,18 +110,26 @@ test('novos prédios e eventos são incluídos em partidas antigas', () => {
   assert.equal(C.eventReward(state, 'harvest').boost.production, 4);
 });
 
-test('produção gasta conta para renascimento e nenhum nível pode ser recebido duas vezes', () => {
+test('saldo atual determina castanhas, e produção histórica não permite renascer', () => {
   const state = C.newState();
-  state.runProduced = 999999999;
+  state.allTime = 1e30;
+  state.runProduced = 1e25;
+  state.prestigeBase = 1e30;
+  state.juice = 10;
+  assert.equal(C.prestigePending(state), 0);
   assert.equal(C.rebirth(state), false);
-  state.runProduced = 1e9;
-  state.juice = 10; // O resto foi investido em máquinas.
+  state.juice = 1e9;
+  assert.equal(C.prestigePending(state), 5);
+  state.juice -= 1; // Uma compra tira o saldo do primeiro patamar.
+  assert.equal(C.prestigePending(state), 0);
+  state.juice += 1;
   assert.equal(C.rebirth(state), 5);
+  assert.equal(state.juice, 0);
   assert.equal(C.rebirth(state), false);
   assert.equal(C.prestigeCost(state), 728e6);
-  state.runProduced = 728e6 - 1;
+  state.juice = 728e6 - 1;
   assert.equal(C.prestigePending(state), 0);
-  state.runProduced++;
+  state.juice++;
   assert.equal(C.rebirth(state), 1);
   assert.equal(state.prestigeEarned, 6);
   assert.equal(C.prestigeCost(state), 1016e6);
@@ -130,7 +138,7 @@ test('produção gasta conta para renascimento e nenhum nível pode ser recebido
 
 test('primeiras cinco castanhas compram um pacote útil e os efeitos persistem', () => {
   const state = C.newState();
-  state.runProduced = 1e9;
+  state.juice = 1e9;
   C.rebirth(state);
   for (const id of ['production', 'starter', 'click', 'offline']) assert.equal(C.buyPermanent(state, id), true);
   assert.equal(state.prestige, 0);
@@ -140,45 +148,51 @@ test('primeiras cinco castanhas compram um pacote útil e os efeitos persistem',
   assert.equal(C.clickPower(state), 2);
   assert.equal(C.offlineRate(state), .5);
   assert.equal(C.permanentCost(state, C.PERMANENT_UPGRADES[0]), 2);
-  const threshold = C.prestigeCost(state);
-  state.runProduced = threshold;
+  state.juice = C.prestigeCost(state);
   C.rebirth(state);
   assert.equal(state.juice, 10000);
   assert.equal(state.runProduced, 0);
-  assert.equal(C.prestigePending(state), 0); // Kit não cria castanhas grátis.
+  assert.equal(C.prestigePending(state), 0);
   const restored = C.normalize(JSON.parse(JSON.stringify(state)));
   assert.equal(restored.permanentUpgrades.production, 1);
   assert.equal(restored.prestigeEarned, 6);
   assert.equal(C.buyPermanent(C.newState(), 'production'), false);
 });
 
-test('curva cúbica é exata nas fronteiras e sobras continuam entre safras', () => {
+test('curva cúbica usa saldo exato, compras reduzem recompensa e rebirth consome sobras', () => {
   const state = C.newState();
-  for (const [produced, expected] of [[999999999,0],[1e9,5],[1728e6-1,5],[1728e6,6],[8e9,10],[27e9,15]]) {
-    state.runProduced = produced;
+  for (const [balance, expected] of [[999999999,0],[1e9,5],[1728e6-1,5],[1728e6,6],[8e9,10],[27e9,15]]) {
+    state.juice = balance;
     assert.equal(C.prestigePending(state), expected);
   }
-  state.runProduced = 1.5e9;
+  state.juice = 8e9;
+  state.juice -= 7e9;
+  assert.equal(C.prestigePending(state), 5);
+  state.juice = 1.5e9;
   assert.equal(C.rebirth(state), 5);
-  assert.equal(C.prestigeCost(state), 228e6);
+  assert.equal(state.juice, 0);
+  assert.equal(C.prestigeCost(state), 728e6);
   C.buyPermanent(state, 'production');
-  assert.equal(C.prestigeCost(state), 228e6);
-  state.runProduced = 228e6;
+  assert.equal(C.prestigeCost(state), 728e6);
+  state.juice = 228e6;
+  assert.equal(C.prestigePending(state), 0); // Os 500 milhões de sobra não carregam.
+  state.juice = 728e6;
   assert.equal(C.rebirth(state), 1);
 });
 
-test('migração de castanhas antigas preserva progresso e não reaplica a base', () => {
-  const old = { prestige: 3, prestigeEarned: 20, runProduced: 100e6, juice: 42, permanentUpgrades: { production: 3 }, owned: [5] };
+test('salvamentos antigos mantêm castanhas e buffs, sem recuperar progresso histórico', () => {
+  const old = { prestige: 3, prestigeEarned: 20, prestigeBase: 1e30, allTime: 1e30, runProduced: 1e25, juice: 42, permanentUpgrades: { production: 3 }, owned: [5] };
   const state = C.normalize(old);
-  assert.equal(state.prestigeBase, 64e9);
+  assert.equal(state.prestigeBase, undefined);
   assert.equal(state.prestige, 3);
   assert.equal(state.prestigeEarned, 20);
   assert.equal(state.juice, 42);
   assert.equal(state.owned[0], 5);
-  assert.equal(C.prestigeCost(state) - state.runProduced, 9.988e9);
+  assert.equal(state.permanentUpgrades.production, 3);
+  assert.equal(C.prestigePending(state), 0);
+  assert.equal(C.prestigeCost(state), 10.088e9);
   const restored = C.normalize(JSON.parse(JSON.stringify(state)));
-  assert.equal(restored.prestigeBase, state.prestigeBase);
-  restored.runProduced = C.prestigeCost(restored);
+  restored.juice = C.prestigeCost(restored);
   assert.equal(C.rebirth(restored), 1);
   assert.equal(C.prestigePending(C.normalize(JSON.parse(JSON.stringify(restored)))), 0);
 });
@@ -215,7 +229,7 @@ test('novos buffs afetam produção, clique, eventos, coleta e horas ausentes', 
 });
 
 test('equipe inicial é entregue após rebirth e persiste sem produção gratuita', () => {
-  const state = C.normalize({ prestige: 5, runProduced: 2e9 });
+  const state = C.normalize({ prestige: 5, runProduced: 2e9, juice: 2e9 });
   assert.equal(C.buyPermanent(state, 'crew'), true);
   assert.equal(state.owned[0], 0);
   assert.ok(C.rebirth(state) > 0);
@@ -273,4 +287,12 @@ test('economia usa 15% por produtor, dobro por melhoria e aroma proporcional às
   const noAroma = C.production(state);
   state.upgrades.push(aroma.id);
   assert.ok(Math.abs(C.production(state) / noAroma - 1.04) < 1e-10);
+});
+
+
+test('contagem funciona para castanhas antigas mesmo com saldo menor que um bilhão', () => {
+  const state = C.normalize({ prestige: 1, juice: 208e6 });
+  assert.equal(C.prestigePending(state), 2);
+  state.juice = 208e6 - 1;
+  assert.equal(C.prestigePending(state), 1);
 });
