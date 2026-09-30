@@ -16,13 +16,13 @@ Atualize **os dois valores** `gameVersion` em `dist/game.js` e `version` em `dis
 
 O renascimento usa somente `state.juice`, o saldo atual disponível na conta. Produção histórica (`allTime`), produção da safra (`runProduced`) e a antiga `prestigeBase` não entram no cálculo. Sem castanhas conquistadas, o primeiro renascimento exige 1 bilhão em saldo e rende 5 castanhas; 8 bilhões rendem 10 e 27 bilhões rendem 15. Para `E` castanhas já conquistadas, `N` novas exigem `8 milhões × ((E + N)³ − E³)` copos em saldo, com mínimo de 1 bilhão quando `E = 0`. Depois de conquistar 5 castanhas, a próxima exige 728 milhões em saldo; depois de 6, exige 1,016 bilhão. Gastar copos reduz a recompensa disponível. Gastar castanhas não reduz o custo crescente. O renascimento consome o saldo, sem carregar sobras para a safra seguinte; somente o Kit de recomeço fornece o novo saldo inicial.
 
-Cada castanha conquistada dá +1% de produção, mesmo depois de gastar. A loja tem 12 buffs com preços que dobram por nível. Produção e clique permanentes dão +10% **aditivos** por nível, até +100%, sem a antiga curva exponencial. Kit inicial dobra por nível. Cooperativa dá +0,5% por tipo e nível; Pulso industrial acrescenta +0,1% de CpS por nível. Conquistas só aumentam a produção através da linha Aroma (4% de aroma por conquista), sem bônus global gratuito.
+Cada castanha conquistada dá +1% de produção, mesmo depois de gastar. A loja tem 15 buffs com preços que dobram por nível. Produção e clique permanentes dão +10% **aditivos** por nível, até +100%, sem a antiga curva exponencial. Kit inicial dobra por nível. Cooperativa dá +0,5% por tipo e nível; Pulso industrial acrescenta +0,1% de CpS por nível. Conquistas só aumentam a produção através da linha Aroma (4% de aroma por conquista), sem bônus global gratuito.
 
 ## Economia de referência
 
 Referência consultada: [código oficial do Cookie Clicker](https://orteil.dashnet.org/cookieclicker/main.js), em 30/09/2026. Mantemos a regra pedida de renascimento pelo **saldo atual**, com primeiro patamar de 1 bilhão; esse ponto difere do jogo original.
 
-- 18 produtores com os preços e CpS base correspondentes do original, incluindo os seis avançados corrigidos. Cada unidade encarece 15%.
+- 22 produtores com os preços e CpS base correspondentes do original, incluindo os seis avançados corrigidos. Cada unidade encarece 15%.
 - Melhorias normais em 1, 5, 25, 50, 100, 150 e depois a cada 50 até 600. Fatores de preço iniciais: 10, 50, 500, 50.000, 5 milhões, 500 milhões. Dobram a produção do produtor.
 - Espremedores e cliques compartilham os três primeiros dobramentos (100, 500 e 10.000). Depois, a equipe integrada dá bônus por outro produtor, seguindo a linha de dedos do original.
 - Cliques começam em 1, sem fração gratuita de CpS. A linha avançada acrescenta 1% de CpS por compra, por 50 mil, 5 milhões, 500 milhões etc., desbloqueada por suco feito manualmente. Os cliques continuam sem limites ou detector de autoclicker.
@@ -40,3 +40,14 @@ Execute `node tests/game-core.test.js`, `node tests/cloud-sync.test.js`, `node t
 A interface tem rolagem independente para produtores e loja. Todos os números dinâmicos são abreviados a partir de 1.000, inclusive produção por segundo, quantidades e ranking. A notação segue até vigintilhão e depois usa notação científica. Produções menores que 1.000 preservam duas casas decimais. Conflitos de revisão recarregam o salvamento remoto, sem reenviar um cache antigo após um reset administrativo.
 
 Cliques têm partículas e movimento do copo; compras, eventos, conquistas e renascimentos têm feedback animado. Prefers-reduced-motion desativa os efeitos. O número de partículas simultâneas é limitado apenas para desempenho visual, sem limitar os cliques ou ganhos.
+
+## Expansão de conteúdo — 30/09/2026
+
+- 4 produtores avançados: Conselho dos cajus, Sonho engarrafado, Oceano de realidades e Cajueiro do infinito, com 60 melhorias individuais e 4 sinergias; os produtores antigos mantêm seus IDs.
+- 8 receitas novas para diferentes estágios, com +1% a +5% de produção. Total: 392 melhorias comuns.
+- 70 conquistas novas por produtor, produção, cliques, receitas, diversidade, desafios e eventos. Total: 126 conquistas.
+- 3 eventos novos: Feira do caju (prêmio limitado por saldo e CpS), Aurora do pomar (produção ×2 por 60s) e Brisa da safra (cliques ×3 por 40s). Total: 9 eventos; a frequência geral segue igual.
+- 3 buffs permanentes: Biblioteca ancestral (+1% por cinco melhorias comuns/nível), Raízes do sertão (+1% por dez cajueiros/nível) e Reserva de eventos (+5% de prêmios instantâneos/nível). Máximo de 3 níveis, preços 8/12/6 castanhas, crescimento ×3.
+- Nova aba Desafios com 12 objetivos por safra. Resgate único por objetivo, uma recompensa de até 60s de CpS, limitada a 2% do saldo, mínimo de 1 copo. Renascimento limpa os resgates da safra e preserva a contagem histórica de desafios. Recompensas não usam bônus temporários nem premiam castanhas diretamente.
+
+Novos campos `claimedMissions` e `missionsCompleted` ficam no JSON existente do salvamento. Partidas antigas começam sem resgates e sem alterar saldo, castanhas, buffs ou produtores. Recompensas são contabilizadas como produção na safra/histórico, mas só o saldo atual continua determinando o renascimento.

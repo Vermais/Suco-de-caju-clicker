@@ -103,7 +103,7 @@ test('skin escolhida sobrevive ao salvamento e ao renascimento', () => {
 
 test('novos prédios e eventos são incluídos em partidas antigas', () => {
   const state = C.normalize({ owned: Array(12).fill(1), eventStats: { total: 3, golden: 3 } });
-  assert.equal(state.owned.length, 18);
+  assert.equal(state.owned.length, 22);
   assert.equal(state.owned[13], 0);
   assert.equal(state.eventStats.meteor, 0);
   assert.ok(C.eventReward(state, 'meteor').gain >= 13);
@@ -243,9 +243,9 @@ test('equipe inicial é entregue após rebirth e persiste sem produção gratuit
 });
 
 test('novos produtores têm custos e produção crescentes, melhorias e sinergias reais', () => {
-  assert.equal(C.BUILDINGS.length, 18);
-  assert.equal(C.PERMANENT_UPGRADES.length, 12);
-  assert.equal(new Set(C.PERMANENT_UPGRADES.map(u => u.id)).size, 12);
+  assert.equal(C.BUILDINGS.length, 22);
+  assert.equal(C.PERMANENT_UPGRADES.length, 15);
+  assert.equal(new Set(C.PERMANENT_UPGRADES.map(u => u.id)).size, 15);
   for (let i = 1; i < C.BUILDINGS.length; i++) {
     assert.ok(C.BUILDINGS[i].base > C.BUILDINGS[i-1].base);
     assert.ok(C.BUILDINGS[i].cps > C.BUILDINGS[i-1].cps);
@@ -368,4 +368,111 @@ test('perfil de um bilhão tem investimentos limitados e não carrega prestígio
   assert.ok(C.production(state) > 1e4 && C.production(state) < 1e6);
   assert.equal(C.prestigePending(state), 5);
   assert.equal(C.production(C.normalize(JSON.parse(JSON.stringify(state)))), C.production(state));
+});
+
+test('expansão preserva partidas antigas e inclui produtores, eventos e desafios', () => {
+  const old = { juice: 12345, owned: Array(18).fill(5), prestige: 3, prestigeEarned: 9, upgrades: ['click4'], achievements: ['juice-1'], permanentUpgrades: { production: 2 } };
+  const state = C.normalize(old);
+  assert.equal(state.juice, old.juice);
+  assert.deepEqual(state.owned.slice(0,18), old.owned);
+  assert.deepEqual(state.owned.slice(18), [0,0,0,0]);
+  assert.equal(state.permanentUpgrades.production, 2);
+  assert.equal(state.permanentUpgrades.recipes, 0);
+  assert.equal(state.eventStats.aurora, 0);
+  assert.deepEqual(state.claimedMissions, []);
+  assert.equal(state.missionsCompleted, 0);
+  assert.equal(state.prestigeEarned, 9);
+  for (let id = 18; id < 22; id++) {
+    assert.ok(C.UPGRADES.find(u => u.id === `b${id}-600`));
+    assert.ok(C.UPGRADES.find(u => u.id === `synergy-${id}`));
+  }
+});
+
+test('desafios exigem objetivo, pagam uma vez e contabilizam saldo e histórico', () => {
+  const state = C.newState();
+  assert.equal(C.claimMission(state,'first-machine'), false);
+  assert.equal(C.claimMission(state,'inexistente'), false);
+  state.owned[0] = 1; state.juice = 1000;
+  const before = state.juice;
+  const reward = C.claimMission(state,'first-machine');
+  assert.equal(reward, 20);
+  assert.equal(state.juice, before + reward);
+  assert.equal(state.runProduced, reward);
+  assert.equal(state.allTime, reward);
+  assert.equal(state.missionsCompleted, 1);
+  assert.equal(C.claimMission(state,'first-machine'), false);
+  const restored = C.normalize(JSON.parse(JSON.stringify(state)));
+  assert.equal(C.claimMission(restored,'first-machine'), false);
+  assert.equal(restored.missionsCompleted, 1);
+  restored.juice = 1e9;
+  C.rebirth(restored);
+  assert.deepEqual(restored.claimedMissions, []);
+  assert.equal(restored.missionsCompleted, 1);
+  restored.owned[0] = 1;
+  assert.equal(C.claimMission(restored,'first-machine'), 1);
+});
+
+test('recompensas de desafio respeitam um minuto, 2% do saldo e ignoram bônus temporário', () => {
+  const state = C.newState();
+  state.owned[1] = 100;
+  state.juice = 1e9;
+  assert.equal(C.missionReward(state), 6000);
+  state.juice = 100;
+  assert.equal(C.missionReward(state), 2);
+  state.activeBoost = { id:'golden', production:7, until:Date.now()+10000 };
+  assert.equal(C.missionReward(state), 2);
+  state.juice = 0;
+  assert.equal(C.missionReward(state), 1);
+  const corrupt = C.normalize({ claimedMissions:['team','team','fake'], missionsCompleted:-2 });
+  assert.deepEqual(corrupt.claimedMissions,['team']);
+  assert.equal(corrupt.missionsCompleted,1);
+});
+
+test('metas e conquistas medem produtor individual, diversidade, cliques e receitas', () => {
+  const state = C.newState();
+  state.owned[2] = 25; state.owned[1] = 1; state.handmade = 1234;
+  state.upgrades = ['click1','click2'];
+  assert.equal(C.progressValue(state,{kind:'producer',building:2}),25);
+  assert.equal(C.progressValue(state,{kind:'diversity'}),2);
+  assert.equal(C.progressValue(state,{kind:'handmade'}),1234);
+  assert.equal(C.progressValue(state,{kind:'upgrades'}),2);
+  assert.equal(C.progressValue(state,{kind:'cps'}),C.production(state));
+  assert.ok(C.ACHIEVEMENTS.find(a=>a.id==='producer-21-100'));
+});
+
+test('todos os eventos novos podem aparecer e seus prêmios persistem', () => {
+  const ids = new Set(Array.from({length:1000},(_,i)=>C.selectEvent(i/1000).id));
+  assert.equal(ids.size,C.EVENTS.length);
+  const state=C.newState(); state.owned[1]=100; state.juice=1000;
+  assert.equal(C.eventReward(state,'merchant').gain,113);
+  assert.equal(C.eventReward(state,'aurora').boost.production,2);
+  assert.equal(C.eventReward(state,'breeze').boost.click,3);
+  state.eventStats.breeze=1;
+  state.pendingEvent={id:'merchant',until:Date.now()+10000};
+  state.activeBoost={id:'aurora',production:2,click:1,until:Date.now()+10000};
+  const restored=C.normalize(JSON.parse(JSON.stringify(state)));
+  assert.equal(restored.pendingEvent.id,'merchant');
+  assert.equal(restored.activeBoost.id,'aurora');
+  assert.equal(restored.eventStats.breeze,1);
+});
+
+test('novos buffs permanentes dão bônus condicionais e persistem após rebirth', () => {
+  const state=C.newState(); state.prestige=100; state.prestigeEarned=100;
+  state.owned[2]=20; state.upgrades=['global1','global2','click1','click2','click3'];
+  const before=C.production(state);
+  assert.equal(C.buyPermanent(state,'recipes'),true);
+  assert.ok(Math.abs(C.production(state)/before-1.01)<1e-10);
+  const recipes=C.production(state);
+  assert.equal(C.buyPermanent(state,'orchard'),true);
+  assert.ok(Math.abs(C.production(state)/recipes-1.02)<1e-10);
+  state.juice=1e12;
+  const gain=C.eventReward(state,'merchant').gain;
+  assert.equal(C.buyPermanent(state,'reserve'),true);
+  assert.ok(Math.abs(C.eventReward(state,'merchant').gain/gain-1.05)<1e-10);
+  state.juice=C.prestigeCost(state);
+  assert.equal(C.rebirth(state),1);
+  const restored=C.normalize(JSON.parse(JSON.stringify(state)));
+  assert.equal(restored.permanentUpgrades.recipes,1);
+  assert.equal(restored.permanentUpgrades.orchard,1);
+  assert.equal(restored.permanentUpgrades.reserve,1);
 });

@@ -3,7 +3,7 @@
   const C = window.CajuCore;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-30-2';
+  const gameVersion = '2026-09-30-3';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -151,10 +151,10 @@
     return buyMode === 'max' ? C.affordableCount(b, state.owned[b.id], state.juice) : Number(buyMode);
   }
   function checkAchievements() {
-    const count = state.owned.reduce((a, b) => a + b, 0);
+    const cps = C.production(state);
     let changed = false;
     for (const a of C.ACHIEVEMENTS) {
-      const value = a.kind === 'run' ? state.runProduced : a.kind === 'allTime' ? state.allTime : a.kind === 'buildings' ? count : a.kind === 'clicks' ? state.clicks : a.kind === 'prestige' ? C.earnedNuts(state) : a.kind === 'events' ? state.eventStats.total : a.kind === 'event' ? state.eventStats[a.event] : state.rebirths;
+      const value = C.progressValue(state, a, cps);
       if (value >= a.at && !state.achievements.includes(a.id)) {
         state.achievements.push(a.id);
         changed = true;
@@ -229,6 +229,37 @@
       upgradeList.append(button);
     });
   }
+  const missionCards = C.MISSIONS.map(m => {
+    const card = document.createElement('article');
+    card.className = 'mission-card';
+    card.innerHTML = `<strong>${m.name}</strong><p>${m.description}</p><progress max="${m.at}" value="0" aria-label="${m.name}"></progress><div class="mission-meta"></div><button class="primary" type="button">Resgatar recompensa</button>`;
+    card.querySelector('button').addEventListener('click', () => {
+      const gain = C.claimMission(state, m.id);
+      if (!gain) return;
+      checkAchievements(); render(true); save();
+      FX.celebrate(document.querySelector('.play'));
+      toast('Desafio concluído! +' + format(gain) + ' copos');
+    });
+    $('missionList').append(card);
+    return card;
+  });
+  function renderMissions() {
+    if ($('missionsPanel').hidden) return;
+    $('missionCount').textContent = `${state.claimedMissions.length} de ${C.MISSIONS.length} resgatados nesta safra`;
+    const cps = C.production(state);
+    const reward = C.missionReward(state, cps);
+    C.MISSIONS.forEach((m, i) => {
+      const card = missionCards[i];
+      const value = C.progressValue(state, m, cps);
+      const claimed = state.claimedMissions.includes(m.id);
+      card.querySelector('progress').value = Math.min(m.at, value);
+      card.querySelector('.mission-meta').textContent = `${format(Math.min(m.at, value))} / ${format(m.at)} · +${format(reward)} copos`;
+      const button = card.querySelector('button');
+      button.disabled = claimed || value < m.at;
+      button.textContent = claimed ? 'Resgatado nesta safra' : 'Resgatar recompensa';
+      card.classList.toggle('completed', claimed);
+    });
+  }
   function renderAchievements() {
     achievementList.replaceChildren();
     $('achievementCount').textContent = `${state.achievements.length} de ${C.ACHIEVEMENTS.length} desbloqueadas`;
@@ -284,6 +315,7 @@
       button.title = `${b.name}: ${precise(b.cps)} copos/s por unidade. ${format(amount)} por ${precise(cost)} copos.`;
     });
     renderUpgrades();
+    renderMissions();
     const pending = C.prestigePending(state);
     $('prestigeTotal').textContent = format(state.prestige);
     $('prestigeBonus').textContent = '+' + format(C.earnedNuts(state)) + '%';
@@ -300,7 +332,7 @@
       permanentButtons[i].querySelector('.upgrade-price').textContent = maxed ? 'MÁX' : format(C.permanentCost(state, u)) + ' 🌰';
     });
     const seconds = boost ? Math.ceil((boost.until - Date.now()) / 1000) : 0;
-    const label = boost?.id === 'golden' ? 'Safra dourada' : boost?.id === 'rush' ? 'Hora do pedido' : boost?.id === 'harvest' ? 'Grande colheita' : 'Festival do caju';
+    const label = C.EVENTS.find(e => e.id === boost?.id)?.name || 'Bônus da safra';
     $('bonusStatus').textContent = boost ? `${label}: produção ${boost.production}× e clique ${boost.click}× por ${seconds}s` : pedroSkin ? 'Clique no Pedro Victor para preparar suco' : 'Clique no copo para preparar suco';
     $('bonusStatus').classList.toggle('active', !!boost);
     const pendingEvent = state.pendingEvent && state.pendingEvent.until > Date.now() ? C.EVENTS.find(e => e.id === state.pendingEvent.id) : null;
@@ -425,7 +457,7 @@
   }));
   $('refreshRanking').addEventListener('click', loadRanking);
   function setTab(name) {
-    for (const tab of ['Upgrades','Achievements','Prestige','Leaderboard']) {
+    for (const tab of ['Upgrades','Achievements','Missions','Prestige','Leaderboard']) {
       const active = tab === name;
       $('tab' + tab).classList.toggle('active', active);
       $('tab' + tab).setAttribute('aria-selected', String(active));
@@ -433,8 +465,9 @@
     }
     FX.animate($(name.toLowerCase() + 'Panel'), [{ opacity: .4, transform: 'translateY(8px)' }, { opacity: 1, transform: 'translateY(0)' }], 220);
     if (name === 'Leaderboard') loadRanking();
+    if (name === 'Missions') renderMissions();
   }
-  ['Upgrades','Achievements','Prestige','Leaderboard'].forEach(name => $('tab' + name).addEventListener('click', () => setTab(name)));
+  ['Upgrades','Achievements','Missions','Prestige','Leaderboard'].forEach(name => $('tab' + name).addEventListener('click', () => setTab(name)));
   const dialog = $('rebirthDialog');
   $('rebirthButton').addEventListener('click', () => {
     if (!C.prestigePending(state)) return;
@@ -473,8 +506,7 @@
         save();
       }
       if (!state.pendingEvent && current >= state.nextEventAt) {
-        const roll = Math.random();
-        const selected = C.EVENTS[roll < .45 ? 0 : roll < .65 ? 1 : roll < .79 ? 2 : roll < .88 ? 3 : roll < .95 ? 4 : 5];
+        const selected = C.selectEvent();
         state.pendingEvent = { id: selected.id, until: current + C.eventLifetime(state, selected) };
         save();
       }

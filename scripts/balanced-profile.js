@@ -2,10 +2,7 @@
 const C = require('../dist/game-core.js');
 function achievements(state) {
   state.achievements = C.ACHIEVEMENTS.filter(a => {
-    const values = { run: state.runProduced, allTime: state.allTime,
-      buildings: state.owned.reduce((sum, n) => sum + n, 0), clicks: state.clicks,
-      prestige: C.earnedNuts(state), events: state.eventStats.total, rebirths: state.rebirths };
-    return (a.kind === 'event' ? state.eventStats[a.event] : values[a.kind]) >= a.at;
+    return C.progressValue(state, a) >= a.at;
   }).map(a => a.id);
 }
 function balancedProfile(balance = 1e9, investment = 250e6) {
