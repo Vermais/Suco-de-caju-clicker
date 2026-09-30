@@ -16,7 +16,7 @@ test('melhorias e castanhas aumentam a produção prevista', () => {
   const state = C.newState();
   state.owned[0] = 10;
   assert.equal(C.production(state), 1);
-  state.upgrades.push('b0-10');
+  state.upgrades.push('click1');
   assert.equal(C.production(state), 2);
   state.prestige = 2;
   state.prestigeEarned = 2;
@@ -54,11 +54,11 @@ test('salvamento anterior é migrado sem perder saldo nem construções', () => 
 
 test('novas melhorias liberam por progresso e bônus distintos afetam clique e produção', () => {
   const state = C.newState();
-  state.owned[0] = 5;
-  assert.equal(C.upgradeUnlocked(C.UPGRADES.find(u => u.id === 'b0-5'), state), true);
-  state.upgrades.push('b0-5');
-  assert.equal(C.production(state), 1);
-  assert.equal(C.production(state, 2), 2);
+  state.owned[1] = 5;
+  assert.equal(C.upgradeUnlocked(C.UPGRADES.find(u => u.id === 'b1-5'), state), true);
+  state.upgrades.push('b1-5');
+  assert.equal(C.production(state), 10);
+  assert.equal(C.production(state, 2), 20);
   assert.equal(C.clickPower(state, 5), 5);
   assert.equal(new Set(C.UPGRADES.map(u => u.id)).size, C.UPGRADES.length);
   assert.equal(new Set(C.ACHIEVEMENTS.map(a => a.id)).size, C.ACHIEVEMENTS.length);
@@ -66,8 +66,8 @@ test('novas melhorias liberam por progresso e bônus distintos afetam clique e p
 
 test('eventos têm recompensas distintas e mantêm seus dados no salvamento', () => {
   const state = C.newState();
-  assert.equal(C.eventReward(state, 'rain').gain, 100);
-  assert.equal(C.eventReward(state, 'golden', true).gain, 77);
+  assert.equal(C.eventReward(state, 'rain').gain, 13);
+  assert.equal(C.eventReward(state, 'golden', true).gain, 13);
   assert.equal(C.eventReward(state, 'rush').boost.click, 5);
   assert.equal(C.eventReward(state, 'festival').boost.duration, 45000);
   state.eventStats.total = 2;
@@ -106,7 +106,7 @@ test('novos prédios e eventos são incluídos em partidas antigas', () => {
   assert.equal(state.owned.length, 18);
   assert.equal(state.owned[13], 0);
   assert.equal(state.eventStats.meteor, 0);
-  assert.ok(C.eventReward(state, 'meteor').gain >= 150);
+  assert.ok(C.eventReward(state, 'meteor').gain >= 13);
   assert.equal(C.eventReward(state, 'harvest').boost.production, 4);
 });
 
@@ -144,8 +144,8 @@ test('primeiras cinco castanhas compram um pacote útil e os efeitos persistem',
   assert.equal(state.prestige, 0);
   assert.equal(state.prestigeEarned, 5);
   state.owned[0] = 10;
-  assert.equal(C.production(state), 1.05 * 1.5);
-  assert.equal(C.clickPower(state), 2);
+  assert.equal(C.production(state), 1.05 * 1.1);
+  assert.equal(C.clickPower(state), 1.1);
   assert.equal(C.offlineRate(state), .5);
   assert.equal(C.permanentCost(state, C.PERMANENT_UPGRADES[0]), 2);
   state.juice = C.prestigeCost(state);
@@ -201,7 +201,8 @@ test('novos buffs afetam produção, clique, eventos, coleta e horas ausentes', 
   const state = C.normalize({ prestige: 100, owned: [1000, 100], achievements: ['juice-1', 'juice-10'] });
   const before = C.production(state);
   assert.equal(C.buyPermanent(state, 'synergy'), true);
-  assert.equal(C.production(state), before * 1.04);
+  assert.equal(C.production(state), before * 1.01);
+  state.upgrades.push('aroma-0');
   const synergy = C.production(state);
   assert.equal(C.buyPermanent(state, 'milk'), true);
   assert.ok(C.production(state) > synergy);
@@ -253,12 +254,14 @@ test('novos produtores têm custos e produção crescentes, melhorias e sinergia
   state.owned[14] = 15;
   state.owned[13] = 100;
   const before = C.production(state);
+  state.runProduced = 1e15;
   const u = C.UPGRADES.find(u => u.id === 'synergy-14');
   assert.equal(C.upgradeUnlocked(u, state), true);
   state.upgrades.push(u.id);
   assert.equal(C.production(state) - before, 15 * C.BUILDINGS[14].cps);
   assert.ok(C.UPGRADES.find(u => u.id === 'b17-500'));
-  state.runProduced = 2e6;
+  state.handmade = 1e9;
+  state.runProduced = 1e18;
   const click = C.UPGRADES.find(u => u.id === 'expansion-click-0');
   assert.equal(C.upgradeUnlocked(click, state), true);
   const power = C.clickPower(state);
@@ -273,7 +276,7 @@ test('economia usa 15% por produtor, dobro por melhoria e aroma proporcional às
   for (const u of C.UPGRADES.filter(u => u.click)) assert.equal(u.click, 2);
   for (const u of C.UPGRADES.filter(u => u.global)) assert.ok(u.global <= 1.25 && u.global > 1);
   const tier = C.UPGRADES.find(u => u.id === 'b2-100');
-  assert.equal(tier.cost, b.base * 50000);
+  assert.equal(tier.cost, b.base * 5e6);
   const state = C.newState();
   state.owned[2] = 100;
   const before = C.production(state);
@@ -295,4 +298,74 @@ test('contagem funciona para castanhas antigas mesmo com saldo menor que um bilh
   assert.equal(C.prestigePending(state), 2);
   state.juice = 208e6 - 1;
   assert.equal(C.prestigePending(state), 1);
+});
+
+test('clique começa em 1 e só ganha fração de CpS após comprar a melhoria', () => {
+  const state = C.newState();
+  state.owned[7] = 100;
+  assert.equal(C.clickPower(state), 1);
+  const u = C.UPGRADES.find(u => u.id === 'click4');
+  state.runProduced = 1e9;
+  assert.equal(C.upgradeUnlocked(u, state), false);
+  state.handmade = 1000;
+  assert.equal(C.upgradeUnlocked(u, state), true);
+  state.upgrades.push(u.id);
+  assert.equal(C.clickPower(state), 1 + C.production(state) * .01);
+  assert.ok(Math.abs(C.clickPower(state, 1, 7) - (1 + C.production(state) * .07)) < 1e-8);
+  state.upgrades.push('click5');
+  assert.equal(C.clickPower(state), 1 + C.production(state) * .02);
+});
+
+test('eventos respeitam banco e tempo de produção, sem premiar poder do autoclick', () => {
+  const state = C.newState();
+  state.owned[1] = 100;
+  state.juice = 1000;
+  assert.equal(C.eventReward(state, 'golden', true).gain, 163);
+  state.juice = 1e9;
+  assert.equal(C.eventReward(state, 'golden', true).gain, 90013);
+  const reward = C.eventReward(state, 'golden', true).gain;
+  state.permanentUpgrades.click = 10;
+  assert.equal(C.eventReward(state, 'golden', true).gain, reward);
+  assert.equal(C.eventDelay(state, 0), 300000);
+  assert.equal(C.eventDelay(state, 1), 900000);
+  assert.equal(C.eventReward(state, 'golden').boost.duration, 77000);
+  assert.equal(C.eventReward(state, 'golden').boost.click, 1);
+});
+
+test('buffs permanentes de clique e produção crescem de forma aditiva', () => {
+  const state = C.newState();
+  state.owned[7] = 10;
+  const cps = C.production(state);
+  state.permanentUpgrades.production = 10;
+  state.permanentUpgrades.click = 10;
+  assert.equal(C.production(state), cps * 2);
+  assert.equal(C.clickPower(state), 2);
+  state.achievements = C.ACHIEVEMENTS.map(a => a.id);
+  assert.equal(C.production(state), cps * 2); // Conquistas precisam da linha Aroma.
+});
+
+test('patamares normais têm custos de referência e extras antigos não duplicam bônus', () => {
+  for (const [count, factor] of [[1,10],[5,50],[25,500],[50,5e4],[100,5e6],[150,5e8]]) {
+    const upgrade = C.UPGRADES.find(u => u.id === `b2-${count}`);
+    assert.equal(upgrade.cost, 1100 * factor);
+  }
+  const state = C.normalize({ owned: [10,25], upgrades: ['b0-1','b0-5','b0-10','b1-10','b1-25','b1-75','b1-100'] });
+  assert.deepEqual(state.upgrades, ['click1','click2','click3','b1-25','b1-100']);
+  assert.equal(C.clickPower(state), 8);
+  assert.equal(C.production(state), 108);
+});
+
+test('perfil de um bilhão tem investimentos limitados e não carrega prestígio inflado', () => {
+  const { balancedProfile } = require('../scripts/balanced-profile.js');
+  const state = balancedProfile();
+  assert.equal(state.juice, 1e9);
+  assert.ok(state.allTime <= 1.25e9);
+  assert.equal(state.rebirths, 0);
+  assert.equal(C.earnedNuts(state), 0);
+  assert.deepEqual(state.permanentUpgrades, {});
+  assert.ok(state.owned.slice(8).every(n => n === 0));
+  assert.ok(state.upgrades.every(id => C.upgradeUnlocked(C.UPGRADES.find(u => u.id === id), state)));
+  assert.ok(C.production(state) > 1e4 && C.production(state) < 1e6);
+  assert.equal(C.prestigePending(state), 5);
+  assert.equal(C.production(C.normalize(JSON.parse(JSON.stringify(state)))), C.production(state));
 });

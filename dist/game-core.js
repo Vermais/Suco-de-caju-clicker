@@ -13,12 +13,12 @@
     ['Cidade do caju', '🏙️', 75000000000, 1600000],
     ['Estação orbital', '🛸', 1000000000000, 10000000],
     ['Dimensão do caju', '🌌', 14000000000000, 65000000],
-    ['Pomar quântico', '⚛️', 200000000000000, 410000000],
-    ['Multiverso do caju', '🌀', 3000000000000000, 2700000000],
-    ['Motor temporal', '⏳', 45000000000000000, 18000000000],
-    ['Forja de estrelas', '🌠', 700000000000000000, 120000000000],
-    ['Galáxia engarrafada', '🌌', 11000000000000000000, 800000000000],
-    ['Fonte primordial', '💫', 180000000000000000000, 5400000000000]
+    ['Pomar quântico', '⚛️', 170000000000000, 430000000],
+    ['Multiverso do caju', '🌀', 2100000000000000, 2900000000],
+    ['Motor temporal', '⏳', 26000000000000000, 21000000000],
+    ['Forja de estrelas', '🌠', 310000000000000000, 150000000000],
+    ['Galáxia engarrafada', '🌌', 71000000000000000000, 1100000000000],
+    ['Fonte primordial', '💫', 1.2e22, 8300000000000]
   ].map(([name, icon, base, cps], id) => ({ id, name, icon, base, cps }));
 
   const UPGRADES = [
@@ -44,16 +44,26 @@
     { id: 'global10', name: 'Receita multidimensional', icon: '🌀', description: 'Toda a produção automática +20%.', cost: 60000000000000000, unlock: 30000000000000000, global: 1.2 },
     { id: 'click9', name: 'Mãos do multiverso', icon: '🙌', description: 'Cliques produzem 2×.', cost: 20000000000000000, unlock: 10000000000000000, click: 2 }
   );
+  // Patamares e preços do Cookie Clicker; IDs estáveis nas demais construções.
   const BUILDING_TIERS = [
-    [1, 10, 'primeiro equipamento'], [5, 50, 'primeiros passos'], [10, 200, 'prática'], [25, 500, 'especialização'],
-    [50, 5000, 'excelência'], [75, 20000, 'engenharia'], [100, 50000, 'maestria'],
-    [150, 5e6, 'automação avançada'], [200, 5e8, 'lenda'], [250, 5e10, 'evolução'],
-    [300, 5e12, 'transcendência'], [350, 5e14, 'horizonte'], [400, 5e16, 'eternidade'], [450, 5e18, 'infinito'], [500, 5e20, 'origem']
+    [1, 10, 'primeiro equipamento'], [5, 50, 'primeiros passos'], [25, 500, 'especialização'],
+    [50, 5e4, 'excelência'], [100, 5e6, 'maestria'], [150, 5e8, 'automação avançada'],
+    [200, 5e11, 'lenda'], [250, 5e14, 'evolução'], [300, 5e17, 'transcendência'],
+    [350, 5e20, 'horizonte'], [400, 5e24, 'eternidade'], [450, 5e28, 'infinito'],
+    [500, 5e32, 'origem'], [550, 5e36, 'nova dimensão'], [600, 5e40, 'última fronteira']
   ];
-  BUILDINGS.forEach(b => BUILDING_TIERS.forEach(([count, factor, title]) => {
+  BUILDINGS.slice(1).forEach(b => BUILDING_TIERS.forEach(([count, factor, title]) => {
     UPGRADES.push({ id: `b${b.id}-${count}`, name: `${b.name}: ${title}`, icon: b.icon,
       description: `Produção de ${b.name.toLowerCase()} 2×.`, cost: Math.ceil(b.base * factor),
       building: b.id, count, buildingMult: 2 });
+  }));
+  const FINGER_TIERS = [[25, 1e5, .1], [50, 1e7, 5], [100, 1e8, 10], [150, 1e9, 20],
+    [200, 1e10, 20], [250, 1e13, 20], [300, 1e16, 20], [350, 1e19, 20],
+    [400, 1e22, 20], [450, 1e25, 20], [500, 1e28, 20], [550, 1e31, 20], [600, 1e34, 20]];
+  FINGER_TIERS.forEach(([count, cost, power], i) => UPGRADES.push({
+    id: `b0-${count}`, name: `Espremedor: equipe ${count}`, icon: '✋', building: 0, count, cost,
+    description: i ? `Bônus da equipe integrada ×${power}.` : 'Cada outro produtor acrescenta 0,1 copo ao clique e a cada espremedor.',
+    ...(i ? { fingerMult: power } : { fingerBase: power })
   }));
   UPGRADES.push(
     ...[[2e7, 1.1, 'Controle de qualidade'], [2e9, 1.1, 'Logística inteligente'],
@@ -71,6 +81,30 @@
   BUILDINGS.slice(1).forEach(b => UPGRADES.push({ id: `synergy-${b.id}`, name: `${b.name}: cadeia integrada`, icon: '🤝',
     description: `Cada ${BUILDINGS[b.id - 1].name.toLowerCase()} aumenta a produção de ${b.name.toLowerCase()} em 1%.`,
     cost: b.base * 100, building: b.id, count: 15, synergy: b.id - 1 }));
+
+  UPGRADES.filter(u => u.global).forEach(u => {
+    u.global = 1 + Math.min(.05, (u.global - 1) / 5);
+    u.description = `Toda a produção automática +${Math.round((u.global - 1) * 100)}%.`;
+  });
+  const clickBasics = [100, 500, 10000];
+  UPGRADES.filter(u => /^click[123]$/.test(u.id)).forEach((u, i) => {
+    u.cost = clickBasics[i]; u.building = 0; u.count = i === 2 ? 10 : 1;
+    u.description = 'Cliques e produção base dos espremedores 2×.';
+  });
+  const clickAdvanced = UPGRADES.filter(u => /^click[4-9]$/.test(u.id));
+  clickAdvanced.forEach((u, i) => {
+    delete u.click; u.clickCps = .01; u.cost = 50000 * 100 ** i;
+    u.unlock = 0; u.handmade = 1000 * 10 ** i;
+    u.description = 'Cada clique recebe mais 1% da produção por segundo.';
+  });
+  UPGRADES.filter(u => u.id.startsWith('expansion-click')).forEach((u, i) => {
+    u.cost = 5e16 * 100 ** i; u.clickCps = .01; u.handmade = 1e9 * 10 ** i; u.unlock = 0;
+    u.description = 'Cada clique recebe mais 1% da produção por segundo.';
+  });
+  UPGRADES.filter(u => u.synergy !== undefined).forEach(u => {
+    u.cost = (BUILDINGS[u.synergy].base * 10 + BUILDINGS[u.building].base) * 200000;
+    u.unlock = 1e15; u.partnerCount = 15;
+  });
 
   const ACHIEVEMENTS = [
     ...[1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 1000000000000, 1000000000000000].map((at, i) => ({ id: `juice-${at}`, icon: ['🥤','🍊','🍹','🧃','🍶','🛒','🚛','🌊','🏙️','🏰','🌌','✨'][i], name: ['Primeiro gole','Dez copos','Uma jarra','Barril cheio','Vila do caju','Rio de caju','Mar de suco','Oceano de suco','Continente dourado','Lenda do caju','Além das estrelas','Caju cósmico'][i], kind: 'run', at })),
@@ -131,15 +165,15 @@
     return low;
   }
   const PERMANENT_UPGRADES = [
-    { id: 'production', name: 'Raízes eternas', icon: '🌳', description: 'Produção automática ×1,5 por nível.', cost: 1, growth: 2, max: 10 },
-    { id: 'click', name: 'Mãos da nova safra', icon: '🙌', description: 'Primeiro nível dobra os cliques; próximos níveis multiplicam por 1,5.', cost: 2, growth: 2, max: 10 },
-    { id: 'starter', name: 'Kit de recomeço', icon: '🧺', description: 'Comece com 10.000 copos no nível 1; o kit quintuplica por nível.', cost: 1, growth: 2, max: 5 },
+    { id: 'production', name: 'Raízes eternas', icon: '🌳', description: 'Produção automática +10% por nível (até +100%).', cost: 1, growth: 2, max: 10 },
+    { id: 'click', name: 'Mãos da nova safra', icon: '🙌', description: 'Cliques +10% por nível (até +100%).', cost: 2, growth: 2, max: 10 },
+    { id: 'starter', name: 'Kit de recomeço', icon: '🧺', description: 'Comece com 10.000 copos no nível 1; o kit dobra por nível.', cost: 1, growth: 2, max: 5 },
     { id: 'offline', name: 'Turno noturno', icon: '🌙', description: '+10 pontos percentuais de produção ausente por nível, até 100%.', cost: 1, growth: 2, max: 6 },
     { id: 'events', name: 'Calendário de ouro', icon: '🎉', description: 'Prêmios de eventos +25% e duração dos bônus +15% por nível.', cost: 2, growth: 2, max: 5 },
     { id: 'crew', name: 'Equipe veterana', icon: '👷', description: 'Por nível, comece com 10 espremedores e 2 barracas; um cajueiro a cada 3 níveis.', cost: 2, growth: 2, max: 5 },
-    { id: 'synergy', name: 'Cooperativa eterna', icon: '🤝', description: '+2% de produção por tipo de produtor ativo, por nível.', cost: 3, growth: 2, max: 5 },
+    { id: 'synergy', name: 'Cooperativa eterna', icon: '🤝', description: '+0,5% de produção por tipo de produtor ativo, por nível.', cost: 3, growth: 2, max: 5 },
     { id: 'milk', name: 'Memórias da safra', icon: '🏅', description: 'Bônus de produção das conquistas +20% por nível.', cost: 2, growth: 2, max: 5 },
-    { id: 'clickCps', name: 'Pulso industrial', icon: '⚙️', description: 'Cada clique recebe mais 0,5% da produção por segundo por nível.', cost: 3, growth: 2, max: 5 },
+    { id: 'clickCps', name: 'Pulso industrial', icon: '⚙️', description: 'Cada clique recebe mais 0,1% da produção por segundo por nível.', cost: 3, growth: 2, max: 5 },
     { id: 'frequency', name: 'Estação de festas', icon: '🎊', description: 'Frequência de eventos +12% por nível; o intervalo entre eles diminui.', cost: 3, growth: 2, max: 5 },
     { id: 'window', name: 'Olhar atento', icon: '👀', description: '+20% de tempo para coletar eventos por nível.', cost: 1, growth: 2, max: 5 },
     { id: 'offlineTime', name: 'Reserva da madrugada', icon: '🌌', description: '+4 horas de produção ausente por nível, até 24 horas.', cost: 2, growth: 2, max: 5 }
@@ -147,12 +181,12 @@
   const permanentLevel = (state, id) => state.permanentUpgrades?.[id] || 0;
   const permanentCost = (state, u) => u.cost * u.growth ** permanentLevel(state, u.id);
   const earnedNuts = state => state.prestigeEarned ?? state.prestige;
-  const legacyBonus = state => 1 + earnedNuts(state) * .01 + state.achievements.length * .005 * (1 + permanentLevel(state, 'milk') * .2);
+  const legacyBonus = state => 1 + earnedNuts(state) * .01;
   const offlineRate = state => Math.min(1, .4 + permanentLevel(state, 'offline') * .1);
   const offlineLimit = state => (4 + 4 * permanentLevel(state, 'offlineTime')) * 3600;
-  const eventDelay = (state, random = Math.random()) => (65000 + random * 55000) / (1 + .12 * permanentLevel(state, 'frequency'));
+  const eventDelay = (state, random = Math.random()) => (300000 + random * 600000) / (1 + .12 * permanentLevel(state, 'frequency'));
   const eventLifetime = (state, event) => event.lifetime * (1 + .2 * permanentLevel(state, 'window'));
-  const starterJuice = state => permanentLevel(state, 'starter') ? 10000 * 5 ** (permanentLevel(state, 'starter') - 1) : 0;
+  const starterJuice = state => permanentLevel(state, 'starter') ? 10000 * 2 ** (permanentLevel(state, 'starter') - 1) : 0;
   const starterBuildings = state => BUILDINGS.map((_, i) => {
     const level = permanentLevel(state, 'crew');
     return i === 0 ? level * 10 : i === 1 ? level * 2 : i === 2 ? Math.floor(level / 3) : 0;
@@ -164,36 +198,48 @@
     state.permanentUpgrades[id] = permanentLevel(state, id) + 1;
     return true;
   }
-  const upgradeUnlocked = (u, state) => u.building === undefined ? state.runProduced >= u.unlock && state.achievements.length >= (u.achievementCount || 0) : state.owned[u.building] >= u.count;
+  function upgradeUnlocked(u, state) {
+    return (u.building === undefined || state.owned[u.building] >= u.count)
+      && state.runProduced >= (u.unlock || 0)
+      && (state.handmade || 0) >= (u.handmade || 0)
+      && state.achievements.length >= (u.achievementCount || 0)
+      && (u.synergy === undefined || state.owned[u.synergy] >= u.partnerCount);
+  }
   const boostMultiplier = timed => timed === true ? 7 : Number.isFinite(timed) && timed > 0 ? timed : 1;
+  const basicClickMultiplier = state => UPGRADES.reduce((m, u) => m * (u.click && state.upgrades.includes(u.id) ? u.click : 1), 1);
+  function fingerBonus(state) {
+    const base = UPGRADES.find(u => u.fingerBase && state.upgrades.includes(u.id));
+    if (!base) return 0;
+    const multiplier = UPGRADES.reduce((m, u) => m * (u.fingerMult && state.upgrades.includes(u.id) ? u.fingerMult : 1), 1);
+    return base.fingerBase * multiplier * state.owned.slice(1).reduce((sum, n) => sum + n, 0);
+  }
   function production(state, timed = false) {
     let cps = BUILDINGS.reduce((sum, b) => {
       const power = UPGRADES.reduce((m, u) => m * (u.building === b.id && state.upgrades.includes(u.id) ? u.buildingMult || 1 : 1), 1);
       const synergy = UPGRADES.find(u => u.building === b.id && u.synergy !== undefined && state.upgrades.includes(u.id));
-      return sum + state.owned[b.id] * b.cps * power * (synergy ? 1 + state.owned[synergy.synergy] * .01 : 1);
+      const unit = b.id === 0 ? b.cps * basicClickMultiplier(state) + fingerBonus(state) : b.cps * power;
+      return sum + state.owned[b.id] * unit * (synergy ? 1 + state.owned[synergy.synergy] * .01 : 1);
     }, 0);
     cps *= UPGRADES.reduce((m, u) => m * (u.global && state.upgrades.includes(u.id) ? u.global : 1), 1);
     const aroma = state.achievements.length * .04 * (1 + permanentLevel(state, 'milk') * .2);
     cps *= UPGRADES.reduce((m, u) => m * (u.milk && state.upgrades.includes(u.id) ? 1 + aroma * u.milk : 1), 1);
-    cps *= legacyBonus(state) * 1.5 ** permanentLevel(state, 'production');
-    cps *= 1 + state.owned.filter(count => count > 0).length * .02 * permanentLevel(state, 'synergy');
+    cps *= legacyBonus(state) * (1 + .1 * permanentLevel(state, 'production'));
+    cps *= 1 + state.owned.filter(count => count > 0).length * .005 * permanentLevel(state, 'synergy');
     return cps * boostMultiplier(timed);
   }
-  function clickPower(state, timed = false) {
-    const base = UPGRADES.reduce((m, u) => m * (u.click && state.upgrades.includes(u.id) ? u.click : 1), 1);
-    const clickLevel = permanentLevel(state, 'click');
-    const clickBuff = clickLevel ? 2 * 1.5 ** (clickLevel - 1) : 1;
-    const fraction = .01 + .005 * permanentLevel(state, 'clickCps') + UPGRADES.reduce((sum, u) => sum + (state.upgrades.includes(u.id) ? u.clickCps || 0 : 0), 0);
-    return Math.max(1, Math.floor((base + production(state, false) * fraction) * clickBuff * boostMultiplier(timed)));
+  function clickPower(state, timed = false, productionTimed = false) {
+    const fraction = .001 * permanentLevel(state, 'clickCps') + UPGRADES.reduce((sum, u) => sum + (state.upgrades.includes(u.id) ? u.clickCps || 0 : 0), 0);
+    return (basicClickMultiplier(state) + fingerBonus(state) + production(state, productionTimed) * fraction)
+      * (1 + .1 * permanentLevel(state, 'click')) * boostMultiplier(timed);
   }
   function baseEventReward(state, id, lucky = false) {
     if (id === 'golden') return lucky
-      ? { gain: Math.max(production(state) * 120, clickPower(state) * 77, 77), message: 'Caju dourado: prêmio instantâneo!' }
-      : { boost: { id, production: 7, click: 7, duration: 25000 }, message: 'Safra dourada: produção e clique 7× por 25 segundos!' };
-    if (id === 'rain') return { gain: Math.max(production(state) * 75, clickPower(state) * 40, 100), message: 'Chuva de cajus: copos extras!' };
+      ? { gain: Math.min(state.juice * .15, production(state) * 900) + 13, message: 'Caju dourado: prêmio instantâneo!' }
+      : { boost: { id, production: 7, click: 1, duration: 77000 }, message: 'Safra dourada: produção 7× por 77 segundos!' };
+    if (id === 'rain') return { gain: Math.min(state.juice * .05, production(state) * 60) + 13, message: 'Chuva de cajus: copos extras!' };
     if (id === 'rush') return { boost: { id, production: 2, click: 5, duration: 35000 }, message: 'Hora do pedido: produção 2× e clique 5× por 35 segundos!' };
     if (id === 'festival') return { boost: { id, production: 3, click: 3, duration: 45000 }, message: 'Festival do caju: produção e clique 3× por 45 segundos!' };
-    if (id === 'meteor') return { gain: Math.max(production(state) * 180, clickPower(state) * 80, 150), message: 'Caju meteoro: copos do espaço!' };
+    if (id === 'meteor') return { gain: Math.min(state.juice * .1, production(state) * 120) + 13, message: 'Caju meteoro: copos do espaço!' };
     if (id === 'harvest') return { boost: { id, production: 4, click: 2, duration: 35000 }, message: 'Grande colheita: produção 4× e clique 2× por 35 segundos!' };
     return null;
   }
@@ -209,14 +255,21 @@
   }
   function newState() {
     return { juice: 0, allTime: 0, runProduced: 0, owned: BUILDINGS.map(() => 0), upgrades: [], achievements: [], prestige: 0, prestigeEarned: 0, permanentUpgrades: {}, rebirths: 0, clicks: 0, skin: 'cup',
-      eventStats: { total: 0, golden: 0, rain: 0, rush: 0, festival: 0, meteor: 0, harvest: 0 }, pendingEvent: null, activeBoost: null, nextEventAt: Date.now() + 65000, savedAt: Date.now() };
+      eventStats: { total: 0, golden: 0, rain: 0, rush: 0, festival: 0, meteor: 0, harvest: 0 }, pendingEvent: null, activeBoost: null, handmade: 0, nextEventAt: Date.now() + 300000, savedAt: Date.now() };
   }
   function normalize(raw) {
     const base = newState();
     if (!raw || typeof raw !== 'object') return base;
     const safe = n => Number.isFinite(n) && n >= 0 ? n : 0;
     const oldUpgrades = ['click1','click2','global1','click3','global2','click5'];
-    const mapped = (Array.isArray(raw.upgrades) ? raw.upgrades : []).map(u => typeof u === 'number' ? oldUpgrades[u] : u);
+    const mapped = (Array.isArray(raw.upgrades) ? raw.upgrades : []).map(u => {
+      let id = typeof u === 'number' ? oldUpgrades[u] : u;
+      const oldCursor = { 'b0-1': 'click1', 'b0-5': 'click2', 'b0-10': 'click3' };
+      if (oldCursor[id]) return oldCursor[id];
+      // Patamares extras antigos não duplicam mais os bônus do mesmo estágio.
+      if (/^b\d+-(10|75)$/.test(id)) id = id.replace(/-(10|75)$/, (_, count) => count === '10' ? '-25' : '-100');
+      return id;
+    });
     const allTime = safe(raw.allTime ?? raw.lifetime);
     const earned = Math.max(Math.floor(safe(raw.prestigeEarned ?? raw.prestige)), Math.floor(safe(raw.prestige)));
     const stats = Object.fromEntries(Object.keys(base.eventStats).map(id => [id, Math.floor(safe(raw.eventStats?.[id]))]));
@@ -228,7 +281,7 @@
       upgrades: [...new Set(mapped)].filter(id => UPGRADES.some(u => u.id === id)),
       achievements: [...new Set(Array.isArray(raw.achievements) ? raw.achievements : [])].filter(id => ACHIEVEMENTS.some(a => a.id === id)),
       prestige: Math.floor(safe(raw.prestige)), rebirths: Math.floor(safe(raw.rebirths)), clicks: Math.floor(safe(raw.clicks)), skin: raw.skin === 'pedro67' ? 'pedro67' : 'cup',
-      prestigeEarned: earned,
+      prestigeEarned: earned, handmade: safe(raw.handmade),
       permanentUpgrades: Object.fromEntries(PERMANENT_UPGRADES.map(u => [u.id, Math.min(u.max, Math.floor(safe(raw.permanentUpgrades?.[u.id])))])),
       eventStats: stats, pendingEvent: pending, activeBoost: boost,
       nextEventAt: pending ? safe(raw.nextEventAt) || base.nextEventAt : Math.max(safe(raw.nextEventAt), raw.pendingEvent ? Date.now() + 45000 : 0) || base.nextEventAt,
@@ -246,6 +299,7 @@
     state.owned = starterBuildings(state);
     state.upgrades = [];
     state.clicks = 0;
+    state.handmade = 0;
     state.pendingEvent = null;
     state.activeBoost = null;
     state.nextEventAt = Date.now() + eventDelay(state, 0);

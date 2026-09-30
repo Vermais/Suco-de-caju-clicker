@@ -3,7 +3,7 @@
   const C = window.CajuCore;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-30-1';
+  const gameVersion = '2026-09-30-2';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -269,7 +269,7 @@
     $('juiceCount').textContent = format(state.juice);
     const boost = currentBoost();
     $('cps').textContent = precise(C.production(state, boost?.production || 1));
-    $('clickValue').textContent = format(C.clickPower(state, boost?.click || 1));
+    $('clickValue').textContent = format(C.clickPower(state, boost?.click || 1, boost?.production || 1));
     $('runTotal').textContent = format(state.runProduced);
     $('allTime').textContent = format(state.allTime);
     $('ownedTotal').textContent = format(state.owned.reduce((a,b) => a+b,0)) + ' unidades';
@@ -327,8 +327,9 @@
     setTimeout(() => element.remove(), 850);
   }
   $('juiceButton').addEventListener('click', event => {
-    const gain = C.clickPower(state, currentBoost()?.click || 1);
-    earn(gain); state.clicks++;
+    const boost = currentBoost();
+    const gain = C.clickPower(state, boost?.click || 1, boost?.production || 1);
+    earn(gain); state.clicks++; state.handmade += gain;
     floatText('+' + format(gain), event);
     FX.click($('juiceButton'), $('juiceArea'), event);
     checkAchievements(); render();
