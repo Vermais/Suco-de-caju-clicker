@@ -38,9 +38,19 @@
     animate(target, [{ transform: 'scale(.92) rotate(-2deg)' }, { transform: 'scale(1.04) rotate(1deg)' }, { transform: 'scale(1)' }], 280);
     burst(area, event);
   }
+  function pedroNumber(target, left) {
+    const layer = target.querySelector('.pedro-popups');
+    if (!layer || reduced.matches) return;
+    if (layer.children.length >= 6) layer.firstElementChild.remove();
+    const number = document.createElement('span');
+    number.className = left ? 'pedro-popup pedro-six' : 'pedro-popup pedro-seven';
+    number.textContent = left ? '6' : '7';
+    layer.append(number);
+    setTimeout(() => number.remove(), 650);
+  }
   function celebrate(area) {
     animate(area, [{ filter: 'brightness(1)' }, { filter: 'brightness(1.35)' }, { filter: 'brightness(1)' }], 800);
     burst(area, null, 28, true);
   }
-  window.CajuEffects = { animate, burst, click, celebrate };
+  window.CajuEffects = { animate, burst, click, celebrate, pedroNumber };
 })();

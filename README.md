@@ -89,3 +89,9 @@ Todos os cliques seguem aplicando ganhos e contadores individualmente. Só os n�
 ## Gesto suave e números sincronizados — versão 2026-09-30-9
 
 Rajadas usam um ciclo visual estável de 360–420 ms, com transição curta entre as poses e balanço discreto. O 6 sobe junto da mão à esquerda da imagem e o 7 junto da mão à direita, com o mesmo relógio e deslocamento de fase. Cliques espaçados alternam imediatamente. Preferência por movimento reduzido respeitada; contabilização dos cliques continua sem limites.
+
+## Aura e popups — versão 2026-09-30-10
+
+6/7 aparecem sobre a mão que sobe, flutuam e somem em 650 ms; no máximo seis elementos, com novas emissões ligadas à fase visual em rajadas. Aura funciona em todas as skins. Cada clique contribui até 1,5 pontos, usando o tempo real entre cliques (máximo 5 pontos/s, sem acumular crédito durante pausas longas). 100 pontos ativam produção e clique completos 2× por 20 segundos, seguidos por 20 segundos de recarga sem carga. Não limita saldo nem cliques. Carga parcial e prazos fazem parte do JSON de progresso existente; refresh mantém os prazos absolutos, rebirth limpa a aura, não há aura offline.
+
+Pesquisa: a página cookie-clicker2.com descreve bônus temporários por cookies dourados; a barra pedida não foi confirmada ali. A aura aqui é uma adaptação balanceada própria.

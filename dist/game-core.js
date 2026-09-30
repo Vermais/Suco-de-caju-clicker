@@ -1,6 +1,7 @@
 /* Regras puras do jogo, compartilhadas pelo navegador e pelos testes. */
 (function (root) {
   const stickers = typeof module !== 'undefined' && module.exports ? require('./stickers.js') : root.CajuStickers;
+  const aura = typeof module !== 'undefined' && module.exports ? require('./aura.js') : root.CajuAura;
   const BUILDINGS = [
     ['Espremedor', '✋', 15, 0.1],
     ['Barraca', '⛺', 100, 1],
@@ -322,7 +323,7 @@
   }
   function newState() {
     return { juice: 0, allTime: 0, runProduced: 0, owned: BUILDINGS.map(() => 0), upgrades: [], achievements: [], prestige: 0, prestigeEarned: 0, permanentUpgrades: {}, rebirths: 0, clicks: 0, skin: 'cup',
-      eventStats: Object.fromEntries(['total', ...EVENTS.map(e => e.id)].map(id => [id, 0])), claimedMissions: [], missionsCompleted: 0, pendingEvent: null, activeBoost: null, handmade: 0, nextEventAt: Date.now() + 90000, savedAt: Date.now() };
+      eventStats: Object.fromEntries(['total', ...EVENTS.map(e => e.id)].map(id => [id, 0])), claimedMissions: [], missionsCompleted: 0, pendingEvent: null, activeBoost: null, aura: aura.normalize(null), handmade: 0, nextEventAt: Date.now() + 90000, savedAt: Date.now() };
   }
   function normalize(raw) {
     const base = newState();
@@ -353,7 +354,7 @@
       permanentUpgrades: Object.fromEntries(PERMANENT_UPGRADES.map(u => [u.id, Math.min(u.max, Math.floor(safe(raw.permanentUpgrades?.[u.id])))])),
       claimedMissions: [...new Set(Array.isArray(raw.claimedMissions) ? raw.claimedMissions : [])].filter(id => MISSIONS.some(m => m.id === id)),
       missionsCompleted: Math.max(Math.floor(safe(raw.missionsCompleted)), new Set((Array.isArray(raw.claimedMissions) ? raw.claimedMissions : []).filter(id => MISSIONS.some(m => m.id === id))).size),
-      eventStats: stats, pendingEvent: pending, activeBoost: boost,
+      eventStats: stats, pendingEvent: pending, activeBoost: boost, aura: aura.normalize(raw.aura),
       nextEventAt: pending ? safe(raw.nextEventAt) || base.nextEventAt : Math.min(maxEventAt, Math.max(safe(raw.nextEventAt), raw.pendingEvent ? Date.now() + 45000 : 0) || base.nextEventAt),
       savedAt: safe(raw.savedAt) || Date.now() };
   }
@@ -373,6 +374,7 @@
     state.claimedMissions = [];
     state.pendingEvent = null;
     state.activeBoost = null;
+    state.aura = aura.normalize(null);
     state.nextEventAt = Date.now() + eventDelay(state, 0);
     return pending;
   }

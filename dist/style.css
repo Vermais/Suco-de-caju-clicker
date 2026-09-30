@@ -77,19 +77,21 @@ dialog[open]{animation:dialogIn .24s ease-out}
 .juice-button.pedro-skin .pedro-frames img{position:absolute;inset:0;margin:auto;will-change:opacity;animation-duration:var(--pedro-cycle,420ms);animation-timing-function:linear;animation-iteration-count:infinite}
 .juice-button.pedro-skin.pedro-moving .pedro-frame-left{animation-name:pedroLeft}
 .juice-button.pedro-skin.pedro-moving .pedro-frame-right{animation-name:pedroRight}
-.juice-button.pedro-moving[data-pedro-start="7"] .pedro-frames img,
-.juice-button.pedro-moving[data-pedro-start="7"] .pedro-numbers span{animation-delay:var(--pedro-half-cycle,-210ms)}
+.juice-button.pedro-moving[data-pedro-start="7"] .pedro-frames img{animation-delay:var(--pedro-half-cycle,-210ms)}
 @keyframes pedroLeft{0%,44%,100%{opacity:1}50%,94%{opacity:0}}
 @keyframes pedroRight{0%,44%,100%{opacity:0}50%,94%{opacity:1}}
 @keyframes pedroSway{0%,100%{transform:translateY(0) rotate(-.7deg)}25%,75%{transform:translateY(-3px)}50%{transform:translateY(0) rotate(.7deg)}}
-.pedro-numbers{display:none;position:absolute;inset:0;pointer-events:none;z-index:4}
-.pedro-skin .pedro-numbers{display:block}
-.pedro-numbers span{position:absolute;top:34%;font:900 clamp(2rem,5vw,3.2rem) Fraunces,Georgia,serif;color:#ffcf65;text-shadow:0 3px 0 #563015,0 0 18px #ffb53388;opacity:.25;transform:translateY(12px) scale(.82);transition:transform 150ms cubic-bezier(.2,.8,.3,1),opacity 120ms}
+/* Números nascem na mão que sobe e desaparecem sem reiniciar os anteriores. */
+.pedro-popups{position:absolute;inset:0;pointer-events:none;z-index:4;display:none}
+.pedro-skin .pedro-popups{display:block}
+.pedro-popup{position:absolute;top:38%;font:900 clamp(2rem,5vw,3.2rem) Fraunces,Georgia,serif;color:#ffcf65;text-shadow:0 3px 0 #563015,0 0 18px #ffb53388;animation:pedroPopup 650ms cubic-bezier(.2,.7,.3,1) forwards;will-change:transform,opacity}
 .pedro-six{left:8%}.pedro-seven{right:8%}
-.pedro-skin[data-pedro-pose="6"] .pedro-six,.pedro-skin[data-pedro-pose="7"] .pedro-seven{opacity:1;transform:translateY(-22px) scale(1.12)}
-.pedro-moving .pedro-numbers span{animation-duration:var(--pedro-cycle,420ms);animation-timing-function:ease-in-out;animation-iteration-count:infinite;will-change:transform,opacity;transition:none}
-.pedro-moving .pedro-six{animation-name:pedroSix}
-.pedro-moving .pedro-seven{animation-name:pedroSeven}
-@keyframes pedroSix{0%,44%,100%{opacity:1;transform:translateY(-22px) scale(1.12)}50%,94%{opacity:.25;transform:translateY(12px) scale(.82)}}
-@keyframes pedroSeven{0%,44%,100%{opacity:.25;transform:translateY(12px) scale(.82)}50%,94%{opacity:1;transform:translateY(-22px) scale(1.12)}}
+@keyframes pedroPopup{0%{opacity:0;transform:translateY(0) scale(.6)}15%{opacity:1;transform:translateY(-12px) scale(1.15)}40%{opacity:1}100%{opacity:0;transform:translateY(-85px) scale(.9)}}
+.aura-panel{width:min(100%,320px);margin:4px auto 8px;flex-shrink:0;text-align:left}
+.aura-heading{display:flex;justify-content:space-between;align-items:center;color:#eedec1;font-size:.75rem;line-height:1.4;margin-bottom:5px}.aura-heading strong{letter-spacing:.16em;color:#ffd17b}
+.aura-track{height:9px;border-radius:20px;background:#160e09;overflow:hidden;border:1px solid #80552d}
+.aura-track span{display:block;height:100%;width:0;background:linear-gradient(90deg,#c487e5,#ffca69);border-radius:20px;transition:width 100ms linear}
+.aura-panel p{margin:4px 0 0;color:#cdb28e;font-size:.72rem;line-height:1.4}
+.aura-active .aura-track{box-shadow:0 0 18px #d99b6977;border-color:#ffe097}.aura-active .aura-heading span{color:#ffdf8e;font-weight:900}.aura-active p{color:#ffe3a2}
+@media(max-width:700px){.play{height:810px}}
 @media(prefers-reduced-motion:reduce){.juice-button.pedro-moving #skinImage{visibility:visible}.juice-button.pedro-skin.pedro-moving .pedro-frames{display:none}}

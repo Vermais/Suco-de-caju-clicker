@@ -4,7 +4,7 @@
   const S = window.CajuStickers;
   const $ = id => document.getElementById(id);
   const saveKey = 'suco-de-caju-clicker-v2';
-  const gameVersion = '2026-09-30-9';
+  const gameVersion = '2026-09-30-10';
   const oldKey = 'suco-de-caju-clicker-v1';
   const cloud = window.CajuCloud;
   const userSaveKey = id => 'suco-de-caju-clicker-user-' + id;
@@ -27,7 +27,13 @@
   const buffNow = () => stickerBuff ? stickerBuff.serverNow + performance.now() - buffReceivedAt : Date.now();
   const skinMultiplier = () => cloud.user?.id === stickerUser && buffUser === cloud.user?.id
     ? S.buffMultiplier(stickerBuff, state.skin, stickerOwned, buffNow()) : 1;
-  const productionMultiplier = () => (currentBoost()?.production || 1) * skinMultiplier();
+  const A = window.CajuAura;
+  const auraClock = A.create();
+  const auraMultiplier = () => A.view(state.aura).multiplier;
+  const baseProductionMultiplier = () => (currentBoost()?.production || 1) * skinMultiplier();
+  const productionMultiplier = () => baseProductionMultiplier() * auraMultiplier();
+  // Aura dobra o clique inteiro uma vez, inclusive a fração de CpS.
+  const clickGain = () => C.clickPower(state, currentBoost()?.click || 1, baseProductionMultiplier()) * auraMultiplier();
   const remainingTime = ms => { const seconds = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0'); };
   async function syncStickerBuff(cardId = null) {
     if (cardId === null && buffBusy) return false;
@@ -125,6 +131,7 @@
   }
   let buyMode = '1';
   const pedroMotion = window.CajuHandMotion.create();
+  let lastPedroPose = null;
   let clickUiDirty = false;
   let lastClickUi = -Infinity;
   function renderHands(now = performance.now()) {
@@ -142,7 +149,20 @@
       button.style.setProperty('--pedro-half-cycle', (-motion.cycleMs / 2) + 'ms');
     }
     button.dataset.pedroPose = state.skin === 'pedro67' ? (motion.left ? '6' : '7') : '';
+    if (state.skin === 'pedro67') {
+      if (lastPedroPose !== null && lastPedroPose !== motion.left) FX.pedroNumber(button, motion.left);
+      lastPedroPose = motion.left;
+    } else lastPedroPose = null;
     return motion;
+  }
+  function renderAura() {
+    const aura = A.view(state.aura);
+    $('auraFill').style.width = aura.percent.toFixed(1) + '%';
+    $('auraMeter').setAttribute('aria-valuenow', String(Math.round(aura.percent)));
+    $('auraPanel').classList.toggle('aura-active', aura.active);
+    $('auraLabel').textContent = aura.active ? '2× · ' + aura.seconds + 's' : aura.cooling ? 'Recarga · ' + aura.seconds + 's' : Math.floor(aura.percent) + '%';
+    const status = aura.active ? 'Produção e cliques em dobro!' : aura.cooling ? 'A aura volta a carregar após a recarga.' : 'Clique para carregar · 2× por 20s';
+    if ($('auraStatus').textContent !== status) $('auraStatus').textContent = status;
   }
   let lastFrame = performance.now();
   let lastUi = 0;
@@ -429,6 +449,7 @@
     const sticker = cloud.user?.id === stickerUser && selectedSticker && S.hasOwned(stickerOwned, selectedSticker.id) ? selectedSticker : null;
     const pedroSkin = state.skin === 'pedro67';
     const handMotion = renderHands();
+    renderAura();
     $('openStickers').disabled = !cloud.user;
     $('openStickers').classList.toggle('selected', !!sticker);
     const skinImage = $('skinImage');
@@ -446,7 +467,7 @@
     $('juiceCount').textContent = format(state.juice);
     const boost = currentBoost();
     $('cps').textContent = precise(C.production(state, productionMultiplier()));
-    $('clickValue').textContent = format(C.clickPower(state, boost?.click || 1, productionMultiplier()));
+    $('clickValue').textContent = format(clickGain());
     $('runTotal').textContent = format(state.runProduced);
     $('allTime').textContent = format(state.allTime);
     $('ownedTotal').textContent = format(state.owned.reduce((a,b) => a+b,0)) + ' unidades';
@@ -508,7 +529,9 @@
     const now = performance.now();
     if (state.skin === 'pedro67') { pedroMotion.click(now); renderHands(now); }
     const boost = currentBoost();
-    const gain = C.clickPower(state, boost?.click || 1, productionMultiplier());
+    const activated = !document.hidden && auraClock.click(state.aura, now);
+    if (activated) { FX.celebrate($('juiceArea')); toast('Aura completa! Produção e cliques 2× por 20 segundos.'); save(); }
+    const gain = clickGain();
     earn(gain); state.clicks++; state.handmade += gain;
     // Só a apresentação é agrupada; saldo e contadores recebem TODOS os cliques.
     clickUiDirty = true;
@@ -523,6 +546,8 @@
   document.querySelectorAll('[data-skin]').forEach(button => button.addEventListener('click', () => {
     state.skin = button.dataset.skin;
     pedroMotion.reset();
+    lastPedroPose = null;
+    $('juiceButton').querySelector('.pedro-popups').replaceChildren();
     FX.animate($('juiceButton'), [{ opacity: .2, transform: 'scale(.85)' }, { opacity: 1, transform: 'scale(1)' }], 450);
     render(); save();
   }));
